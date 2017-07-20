@@ -1,0 +1,198 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+C_SRCS += \
+../src/test/test_Op1_template.c \
+../src/test/test_basic_arithmetic.c \
+../src/test/test_basic_arithmetic_NB.c \
+../src/test/test_basic_arithmetic_blk.c \
+../src/test/test_basic_arithmetic_dword.c \
+../src/test/test_basic_arithmetic_dword_NB.c \
+../src/test/test_basic_arithmetic_dword_index.c \
+../src/test/test_basic_arithmetic_dword_mul.c \
+../src/test/test_basic_arithmetic_dword_mul_NB.c \
+../src/test/test_basic_arithmetic_dword_mul_index.c \
+../src/test/test_basic_arithmetic_float.c \
+../src/test/test_basic_arithmetic_float_index.c \
+../src/test/test_basic_arithmetic_index.c \
+../src/test/test_basic_arithmetic_mul_NB.c \
+../src/test/test_basic_arithmetic_mul_div.c \
+../src/test/test_basic_arithmetic_mul_index.c \
+../src/test/test_basic_arithmetic_str.c \
+../src/test/test_basic_comapre_dword_index.c \
+../src/test/test_basic_compare_double.c \
+../src/test/test_basic_compare_double_index.c \
+../src/test/test_basic_compare_dword.c \
+../src/test/test_basic_compare_dword_NB.c \
+../src/test/test_basic_compare_dword_blk.c \
+../src/test/test_basic_compare_float.c \
+../src/test/test_basic_compare_float_index.c \
+../src/test/test_basic_compare_str.c \
+../src/test/test_basic_compare_word.c \
+../src/test/test_basic_compare_word_NB.c \
+../src/test/test_basic_compare_word_blk.c \
+../src/test/test_basic_compare_word_index.c \
+../src/test/test_basic_control.c \
+../src/test/test_basic_conversion.c \
+../src/test/test_basic_conversion_dword.c \
+../src/test/test_basic_conversion_dword_NB.c \
+../src/test/test_basic_conversion_dword_index.c \
+../src/test/test_basic_conversion_extra.c \
+../src/test/test_basic_conversion_float.c \
+../src/test/test_basic_conversion_float_index.c \
+../src/test/test_basic_conversion_word_NB.c \
+../src/test/test_basic_conversion_word_index.c \
+../src/test/test_basic_transfer.c \
+../src/test/test_basic_transfer_blk.c \
+../src/test/test_basic_transfer_dword.c \
+../src/test/test_basic_transfer_dword_NB.c \
+../src/test/test_basic_transfer_dword_index.c \
+../src/test/test_basic_transfer_extra.c \
+../src/test/test_basic_transfer_word_NB.c \
+../src/test/test_basic_transfer_word_index.c \
+../src/test/test_runtime_error_bit.c \
+../src/test/test_runtime_error_blk.c \
+../src/test/test_runtime_error_dword.c \
+../src/test/test_runtime_error_extra.c \
+../src/test/test_runtime_error_float.c \
+../src/test/test_runtime_error_str.c \
+../src/test/test_runtime_error_word.c \
+../src/test/test_sequence_cmd.c \
+../src/test/test_sequence_extra.c \
+../src/test/test_sequence_wb2wb.c \
+../src/test/test_sequence_wordbit.c 
+
+OBJS += \
+./src/test/test_Op1_template.o \
+./src/test/test_basic_arithmetic.o \
+./src/test/test_basic_arithmetic_NB.o \
+./src/test/test_basic_arithmetic_blk.o \
+./src/test/test_basic_arithmetic_dword.o \
+./src/test/test_basic_arithmetic_dword_NB.o \
+./src/test/test_basic_arithmetic_dword_index.o \
+./src/test/test_basic_arithmetic_dword_mul.o \
+./src/test/test_basic_arithmetic_dword_mul_NB.o \
+./src/test/test_basic_arithmetic_dword_mul_index.o \
+./src/test/test_basic_arithmetic_float.o \
+./src/test/test_basic_arithmetic_float_index.o \
+./src/test/test_basic_arithmetic_index.o \
+./src/test/test_basic_arithmetic_mul_NB.o \
+./src/test/test_basic_arithmetic_mul_div.o \
+./src/test/test_basic_arithmetic_mul_index.o \
+./src/test/test_basic_arithmetic_str.o \
+./src/test/test_basic_comapre_dword_index.o \
+./src/test/test_basic_compare_double.o \
+./src/test/test_basic_compare_double_index.o \
+./src/test/test_basic_compare_dword.o \
+./src/test/test_basic_compare_dword_NB.o \
+./src/test/test_basic_compare_dword_blk.o \
+./src/test/test_basic_compare_float.o \
+./src/test/test_basic_compare_float_index.o \
+./src/test/test_basic_compare_str.o \
+./src/test/test_basic_compare_word.o \
+./src/test/test_basic_compare_word_NB.o \
+./src/test/test_basic_compare_word_blk.o \
+./src/test/test_basic_compare_word_index.o \
+./src/test/test_basic_control.o \
+./src/test/test_basic_conversion.o \
+./src/test/test_basic_conversion_dword.o \
+./src/test/test_basic_conversion_dword_NB.o \
+./src/test/test_basic_conversion_dword_index.o \
+./src/test/test_basic_conversion_extra.o \
+./src/test/test_basic_conversion_float.o \
+./src/test/test_basic_conversion_float_index.o \
+./src/test/test_basic_conversion_word_NB.o \
+./src/test/test_basic_conversion_word_index.o \
+./src/test/test_basic_transfer.o \
+./src/test/test_basic_transfer_blk.o \
+./src/test/test_basic_transfer_dword.o \
+./src/test/test_basic_transfer_dword_NB.o \
+./src/test/test_basic_transfer_dword_index.o \
+./src/test/test_basic_transfer_extra.o \
+./src/test/test_basic_transfer_word_NB.o \
+./src/test/test_basic_transfer_word_index.o \
+./src/test/test_runtime_error_bit.o \
+./src/test/test_runtime_error_blk.o \
+./src/test/test_runtime_error_dword.o \
+./src/test/test_runtime_error_extra.o \
+./src/test/test_runtime_error_float.o \
+./src/test/test_runtime_error_str.o \
+./src/test/test_runtime_error_word.o \
+./src/test/test_sequence_cmd.o \
+./src/test/test_sequence_extra.o \
+./src/test/test_sequence_wb2wb.o \
+./src/test/test_sequence_wordbit.o 
+
+C_DEPS += \
+./src/test/test_Op1_template.d \
+./src/test/test_basic_arithmetic.d \
+./src/test/test_basic_arithmetic_NB.d \
+./src/test/test_basic_arithmetic_blk.d \
+./src/test/test_basic_arithmetic_dword.d \
+./src/test/test_basic_arithmetic_dword_NB.d \
+./src/test/test_basic_arithmetic_dword_index.d \
+./src/test/test_basic_arithmetic_dword_mul.d \
+./src/test/test_basic_arithmetic_dword_mul_NB.d \
+./src/test/test_basic_arithmetic_dword_mul_index.d \
+./src/test/test_basic_arithmetic_float.d \
+./src/test/test_basic_arithmetic_float_index.d \
+./src/test/test_basic_arithmetic_index.d \
+./src/test/test_basic_arithmetic_mul_NB.d \
+./src/test/test_basic_arithmetic_mul_div.d \
+./src/test/test_basic_arithmetic_mul_index.d \
+./src/test/test_basic_arithmetic_str.d \
+./src/test/test_basic_comapre_dword_index.d \
+./src/test/test_basic_compare_double.d \
+./src/test/test_basic_compare_double_index.d \
+./src/test/test_basic_compare_dword.d \
+./src/test/test_basic_compare_dword_NB.d \
+./src/test/test_basic_compare_dword_blk.d \
+./src/test/test_basic_compare_float.d \
+./src/test/test_basic_compare_float_index.d \
+./src/test/test_basic_compare_str.d \
+./src/test/test_basic_compare_word.d \
+./src/test/test_basic_compare_word_NB.d \
+./src/test/test_basic_compare_word_blk.d \
+./src/test/test_basic_compare_word_index.d \
+./src/test/test_basic_control.d \
+./src/test/test_basic_conversion.d \
+./src/test/test_basic_conversion_dword.d \
+./src/test/test_basic_conversion_dword_NB.d \
+./src/test/test_basic_conversion_dword_index.d \
+./src/test/test_basic_conversion_extra.d \
+./src/test/test_basic_conversion_float.d \
+./src/test/test_basic_conversion_float_index.d \
+./src/test/test_basic_conversion_word_NB.d \
+./src/test/test_basic_conversion_word_index.d \
+./src/test/test_basic_transfer.d \
+./src/test/test_basic_transfer_blk.d \
+./src/test/test_basic_transfer_dword.d \
+./src/test/test_basic_transfer_dword_NB.d \
+./src/test/test_basic_transfer_dword_index.d \
+./src/test/test_basic_transfer_extra.d \
+./src/test/test_basic_transfer_word_NB.d \
+./src/test/test_basic_transfer_word_index.d \
+./src/test/test_runtime_error_bit.d \
+./src/test/test_runtime_error_blk.d \
+./src/test/test_runtime_error_dword.d \
+./src/test/test_runtime_error_extra.d \
+./src/test/test_runtime_error_float.d \
+./src/test/test_runtime_error_str.d \
+./src/test/test_runtime_error_word.d \
+./src/test/test_sequence_cmd.d \
+./src/test/test_sequence_extra.d \
+./src/test/test_sequence_wb2wb.d \
+./src/test/test_sequence_wordbit.d 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+src/test/%.o: ../src/test/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C Compiler'
+	arm-linux-gnueabi-gcc-4.7 -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+

@@ -1,0 +1,21 @@
+/*
+ * PLC_Operand.c
+ *
+ *  Created on: 2014. 10. 27.
+ *      Author: skson
+ */
+
+#ifndef  PLC_OPERAND_H_
+#include "PLC_Operand.h"
+#endif
+
+inline uint8 PLC_OPERAND_isMyType(PLC_Operand* this, uint16 typeCode){
+	return (this->nMLCode == typeCode)?TRUE:FALSE;
+}
+
+
+inline uint8 PLC_OPERAND_isValid(PLC_Operand* this, uint16 valueCode)
+{
+	return (this->bIsConstant)? TRUE : (this->nAddressCount >valueCode)? TRUE : FALSE;
+}
+

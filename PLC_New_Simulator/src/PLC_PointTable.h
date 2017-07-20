@@ -1,0 +1,30 @@
+/*
+ * PLC_PointTable.h
+ *
+ *  Created on: 2015. 1. 13.
+ *      Author: skson
+ */
+
+#ifndef PLC_POINTTABLE_H_
+#define PLC_POINTTABLE_H_
+#include "PLC_Point.h"
+
+
+#define PLC_POINT_MAX_COUNT 100
+
+typedef struct {
+	PLC_Point pointList[PLC_POINT_MAX_COUNT];
+	uint8 nPointCount;
+}PLC_PointTable;
+
+void PLC_PointTable_init();
+void PLC_PointTable_eraseTaskPoint(uint8 taskIdx);
+
+uint8 PLC_PointTable_addToList(uint8 taskIdx, uint32 pos, uint16 label);
+uint8 PLC_PointTable_getPointByLabel(uint8* dstIdx, uint32* dstPos, uint16 srcLabel);
+void PLC_PointTable_print();
+
+uint8 PLC_PointTable_addGIPToList(uint8 taskIdx, uint32 pos, uint16 label);
+uint8 PLC_PointTable_getGIPByLabel(uint8* dstIdx, uint32* dstPos, uint16 srcLabel);
+
+#endif /* PLC_POINTTABLE_H_ */
