@@ -1,0 +1,44 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+uint8 opndDest[2][3];
+uint8 opndSrc[3][3];
+uint16* currExpected;
+
+uint8 setDestinationOperand(uint8 ml, uint16 addr, uint16* expect, uint8 destIdx)
+{
+	opndDest[destIdx][0] = ml;
+	memcpy(&opndDest[destIdx][1], &addr, sizeof(uint16));
+	currExpected = expect;
+}
+
+uint8 setSrcOperandWord(uint8 ml, uint16 addr, uint16* expect, uint8 srcIdx)
+{
+	opndSrc[srcIdx][0] = ml;
+	memcpy(&opndSrc[srcIdx][1], &addr, sizeof(uint16));
+	addDeviceControlInstruction()
+}
+
+uint8 setSrcOperandDWord(uint8 ml, uint16 addr, uint16* expect, uint8 srcIdx)
+{
+	opndSrc[srcIdx][0] = ml;
+	memcpy(&opndSrc[srcIdx][1], &addr, sizeof(uint16));
+	addDeviceControlInstruction()
+}
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

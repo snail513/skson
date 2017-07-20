@@ -1,0 +1,124 @@
+/*
+ * AT_SpecialTest.c
+ *
+ *  Created on: 2016. 5. 13.
+ *      Author: skson
+ */
+
+#ifndef AT_SPECIALTEST_H_
+#include "AT_SpecialTest.h"
+#include "CUnit/CUnit.h"
+
+
+uint8 AT_testSpecialUnit(SpecicalTestInput input)
+{
+
+	PLC_DEVICE_Init();
+	TestCodeInit();
+	int time;
+	if(!input.inputFunction(input.inputCount, input.inputType, input.inputAddr, input.inValue))
+	{
+		int t =1, f = 0;
+		CU_ASSERT_EQUAL(t, f);
+		return FALSE;
+	}
+
+	if(!input.MLFunction(input.inputCount, input.inputType, input.inputAddr, input.inValue))
+	{
+		int t =1, f = 0;
+		CU_ASSERT_EQUAL(t, f);
+		return FALSE;
+	}
+	TestCodeTearDownByTaskIdx(0);
+
+	time = input.isPulse?2:1;
+	if(!runAdditionalTestCode(time, input.testName))
+	{
+		int t =1, f = 0;
+		CU_ASSERT_EQUAL(t, f);
+		return FALSE;
+	}
+
+
+	if(!AT_assertWordResult(
+			input.inputType[input.expectedIdx],
+			input.inputAddr[input.expectedIdx],
+			input.expected,
+			input.inValLength[input.expectedIdx],
+			input.isOn))
+	{
+		int t =1, f = 0;
+		CU_ASSERT_EQUAL(t, f);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
+uint8 AT_forNext_setInput(int opCount, uint8* operand, uint16* operandAddr, uint16** operandValue)
+{
+	//DBG_LOGPRINT("isOn : %d\n", val);
+	addDeviceControlInstruction(0, OPERAND_ML_CODE_X, 1, 1);
+	//addDeviceControlInstruction(0, OPERAND_ML_CODE_X, 1, 1);
+	addDeviceControlInstruction(0, operand[0], operandAddr[0], *operandValue[0]);
+	addDeviceControlInstruction(0, operand[1], operandAddr[1], *operandValue[1]);
+	return TRUE;
+}
+uint8 AT_forNext_setML(int opCount, uint8* operand, uint16* operandAddr, uint16** operandValue)
+{
+	addMLOperator(ML_CODE_FOR);addMLOperand(operand[0], operandAddr[0]);
+
+	addMLOperator(ML_CODE_LD);addMLOperand(OPERAND_ML_CODE_X, 1);
+	addMLOperator(ML_CODE_INC);addMLOperand(operand[1], operandAddr[1]);
+
+	addMLOperator(ML_CODE_NEXT);
+	addMLOperator(ML_CODE_END);
+	return TRUE;
+}
+//todo : complete this method!
+uint8 AT_forNext()
+{
+	SpecicalTestInput input ;
+	input.MLFunction = AT_forNext_setML;
+	input.inputFunction = AT_forNext_setInput;
+	input.testName = "For-Next test";
+	input.inputCount = 2;
+	input.expectedIdx = 1;
+
+	input.inValLength[0] = 1;
+	input.inValLength[1] = 1;
+
+	input.isPulse = 0;
+	input.isOn = 1;
+
+	uint16 wordDev = {OPERAND_ML_CODE_D, OPERAND_ML_CODE_W};
+	uint16 addr[][] = {
+			{0, opndic[OPERAND_ML_CODE_D].nAddressCount/2, opndic[OPERAND_ML_CODE_D].nAddressCount-1},
+			{0, opndic[OPERAND_ML_CODE_W].nAddressCount/2, opndic[OPERAND_ML_CODE_W].nAddressCount-1}
+	};
+	uint16 addrW = ;
+	int i;
+	for(i = 0; i< 10; i++)
+	{
+		input.inputType[0] = OPERAND_ML_CODE_D;
+		input.inputType[1] = OPERAND_ML_CODE_W;
+
+		input.inputAddr[0] = 100;
+		input.inputAddr[1] = 200;
+
+		input.inValLength[0] = 1;
+		input.inValLength[1] = 1;
+
+		uint16 srcVal = 5;
+		uint16 dstVal = 0;
+
+		input.inValue[0] = &srcVal;
+		input.inValue[1] = &dstVal;
+
+		input.expected = &srcVal;
+
+		AT_testSpecialUnit(input);
+	}
+	return TRUE;
+}
+#endif

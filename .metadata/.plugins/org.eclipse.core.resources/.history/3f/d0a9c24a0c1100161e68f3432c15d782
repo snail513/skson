@@ -1,0 +1,60 @@
+/*
+ * test_baseFunctions.c
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#include "test_baseFunctions.h"
+#endif
+typedef enum{
+	RESULT_BIT = 0,
+	RESULT_WORD,
+	RESULT_DWORD,
+	RESULT_FLOAT,
+	RESULT_DOUBLE,
+	RESULT_BLOCK,
+	RESULT_DWORD_BLOCK,
+	RESULT_STRING,
+}TestBaseFunction_ResultType;
+
+static uint8 step = 1;
+static char* currTestName;
+static uint8(* IL_Function)();
+static uint8(* input_Function)();
+static TestBaseFunction_ResultType resultType;
+uint8 TestBaseFunction_setTestInput(char* testName, void* IL_setFunction, void* input_setFunction, uint8 isStepTest)
+{
+	currTestName = testName;
+	IL_Function = IL_setFunction;
+	input_Function = input_setFunction;
+	if(isStepTest)
+	{
+		step = 2;
+	}
+	else
+	{
+		step = 1;
+	}
+	if(IL_Function ==NULL || input_Function==NULL)
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+void TestBaseFunction_setTestResult(TestBaseFunction_ResultType result)
+{
+	resultType = result;
+}
+uint8 TestBaseFunction_setTestVariable(uint16 operatorMLCode)
+{
+
+}
+uint8 TestBaseFunction_execTest()
+{
+	PLC_DEVICE_Init();
+	if(!TestBaseFunction_setTestInput())
+	runTestCode(step, currTestName);
+}
+

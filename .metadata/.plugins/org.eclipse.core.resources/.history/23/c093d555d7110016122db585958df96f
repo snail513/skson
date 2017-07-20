@@ -1,0 +1,24 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+typedef struct operandType
+{
+	void* operands[5];
+};
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

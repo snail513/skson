@@ -1,0 +1,1615 @@
+/*
+ * PLC_ListOfTestSuite.c
+ *
+ *  Created on: 2014. 11. 17.
+ *      Author: skson
+ */
+
+#ifndef PLC_LISTOFTESTSUITE_H_
+#include "PLC_ListOfTestSuite.h"
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "PLC_TaskExecutor.h"
+#include "crc16.h"
+#ifdef USE_CUNIT_TEST_DEF
+#include <CUnit/CUnit.h>
+#include <CUnit/Basic.h>
+#endif
+
+#if 1
+uint8 inputInstruction[INSTRUCTION_MEMORY_SIZE];
+static uint32 inputInstructionPoint = 0;
+
+static PLC_DEVICE_ControlInstruction control[500];
+static uint16 deviceControlPoint = 0;
+
+PLC_DEVICE_ControlInstruction* PLC_ListOfTestSuite_getControlInput()
+{
+	return control;
+}
+uint16 PLC_ListOfTestSuite_getControlSize()
+{
+	return deviceControlPoint;
+}
+
+
+static uint32 scanCount = 9;
+static uint32 nCurrMeMorySize=0;
+static int countFatalError=0;
+static uint16 queueFatalError[500];
+//static int unitTime = 2;
+//static uint16 inputInstructionPoint = 0;
+static long long currExpected;
+static uint8 isBlockTest;
+static uint8 isValueTest;
+static void(*userLDProgram)(void) = NULL;
+static uint8(*userInitFunction)(void) = NULL;
+static uint8(*userExecFunction)(void) = NULL;
+
+//static char buff[100];
+/*static long long expected[] = {
+	0 ,	//NOP
+	0 ,//NOPLF
+	0 ,//PAGE
+	0 ,//STOP
+	31 ,//LD
+	224 ,//LDI
+	16 ,//LDP
+	0 ,//LDF
+	239 ,//LDIP
+	255 ,//LDIF
+	24 ,//AND
+	102 ,//ANDI
+	16 ,//ANDP
+	4 ,//ANDF
+	239 ,//ANDIP
+	251 ,//ANDIF
+	126 ,//OR
+	129 ,//ORI
+	88 ,//ORP
+	25 ,//ORF
+	167 ,//ORIP
+	230 ,//ORIF
+	0 ,//ANB
+	0 ,//ORB
+	126 ,//MPS
+	126 ,//MRD
+	126 ,//MPP
+	159 ,//INV
+	64 ,//MEP
+	16 ,//MEF
+	64 ,//EGP
+	16 ,//EGF
+	96 ,//OUT
+	127 ,//SET
+	224 ,//RST
+	64 ,//PLS
+	16 ,//PLF
+	127 ,//FF
+	64 ,//DELTA
+
+	64 ,//DELTAP
+	0 ,//SFT
+	0 ,//SFTP
+	24 ,//MC
+	24 ,//MCR
+	0 ,//FEND
+	31 ,//END
+	152 ,//LD=
+	103 ,//LD<>
+	7 ,//LD>
+	96 ,//LD<
+	159 ,//LD>=
+	248 ,//LD<=
+	152 ,//LDD=
+	103 ,//LDD<>
+	7 ,//LDD>
+	96 ,//LDD<
+	159 ,//LDD>=
+	248 ,//LDD<=
+	152 ,//LDE=
+	103 ,//LDE<>
+	7 ,//LDE>
+	96 ,//LDE<
+	159 ,//LDE>=
+	248 ,//LDE<=
+	152 ,//LDED=
+	103 ,//LDED<>
+	7 ,//LDED>
+	96 ,//LDED<
+	159 ,//LDED>=
+	248 ,//LDED<=
+	224 ,//LD$=
+	31 ,//LD$<>
+	24 ,//LD$>
+	7 ,//LD$<
+	248 ,//LD$>=
+	231 ,//LD$<=
+	152 ,//AND=
+	103 ,//AND<>
+	7 ,//AND>
+	96 ,//AND<
+	159 ,//AND>=
+	248 ,//AND<=
+	152 ,//ANDD=
+	103 ,//ANDD<>
+	7 ,//ANDD>
+	96 ,//ANDD<
+	159 ,//ANDD>=
+	248 ,//ANDD<=
+	152 ,//ANDE=
+	103 ,//ANDE<>
+	7 ,//ANDE>
+	96 ,//ANDE<
+	159 ,//ANDE>=
+	248 ,//ANDE<=
+	152 ,//ANDED=
+	103 ,//ANDED<>
+	7 ,//ANDED>
+	96 ,//ANDED<
+	159 ,//ANDED>=
+	248 ,//ANDED<=
+	224 ,//AND$=
+	31 ,//AND$<>
+	24 ,//AND$>
+	7 ,//AND$<
+	248 ,//AND$>=
+	231 ,//AND$<=
+	152 ,//OR=
+	103 ,//OR<>
+	7 ,//OR>
+	96 ,//OR<
+	159 ,//OR>=
+	248 ,//OR<=
+	152 ,//ORD=
+	103 ,//ORD<>
+	7 ,//ORD>
+	96 ,//ORD<
+	159 ,//ORD>=
+	248 ,//ORD<=
+	152 ,//ORE=
+	103 ,//ORE<>
+	7 ,//ORE>
+	96 ,//ORE<
+	159 ,//ORE>=
+	248 ,//ORE<=
+	152 ,//ORED=
+	103 ,//ORED<>
+	7 ,//ORED>
+	96 ,//ORED<
+	159 ,//ORED>=
+	248 ,//ORED<=
+	224 ,//OR$=
+	31 ,//OR$<>
+	24 ,//OR$>
+	7 ,//OR$<
+	248 ,//OR$>=
+	231 ,//OR$<=
+	0 ,//BKCMP=
+	1 ,//BKCMP<>
+	2 ,//BKCMP>
+	3 ,//BKCMP<
+	4 ,//BKCMP>=
+	5 ,//BKCMP<=
+	6 ,//BKCMP=P
+	7 ,//BKCMP<>P
+	8 ,//BKCMP>P
+	9 ,//BKCMP<P
+	10 ,//BKCMP>=P
+	11 ,//BKCMP<=P
+	12 ,//DBKCMP=
+	13 ,//DBKCMP<>
+	14 ,//DBKCMP>
+	15 ,//DBKCMP<
+	16 ,//DBKCMP>=
+	17 ,//DBKCMP<=
+	18 ,//DBKCMP=P
+	19 ,//DBKCMP<>P
+	20 ,//DBKCMP>P
+	21 ,//DBKCMP<P
+	22 ,//DBKCMP>=P
+	23 ,//DBKCMP<=P
+	1794 ,//+
+	258 ,//+P
+	63746 ,//-
+	65282 ,//-P
+	258 ,//+S
+	258 ,//+PS
+	65282 ,//-S
+	65282 ,//-PS
+	512 ,//mlt
+	512 ,//*P
+	128 ,//div
+	128 ,///P
+
+	65550 ,//D+
+	65538 ,//D+P
+	65522 ,//D-
+	65534 ,//D-P
+	65538 ,//D+S
+	65538 ,//D+PS
+	0xFFFF0002 ,//D-S
+	0xFFFF0002 ,//D-PS
+	131072 ,//D*
+	131072 ,//D*P
+	32768 ,//D/
+	32768 ,//D/P
+	0x9999 ,//B+
+	0x0000 ,//B+P
+	0x0003 ,//B-
+	0x0002 ,//B-P
+	0x0000 ,//B+S
+	0x0000 ,//B+PS
+	0x0002 ,//B-S
+	0x0002 ,//B-PS
+	0x89991 ,//B*
+	0x89991 ,//B*P
+	0x1111 ,//B/
+	0x1111 ,//B/P
+	0x99999999 ,//DB+
+	0x00000000 ,//DB+P
+	0x00000003 ,//DB-
+	0x00000002 ,//DB-P
+	0x00000000 ,//DB+S
+	0x00000000 ,//DB+PS
+	0x00000002 ,//DB-S
+	0x00000002 ,//DB-PS
+	0x899999991 ,//DB*
+	0x899999991 ,//DB*P
+	0x11111111 ,//DB/
+	0x11111111 ,//DB/P
+	0 ,//E+
+	0 ,//E+P
+	0 ,//E-
+	0 ,//E-P
+	0 ,//E+S
+	0 ,//E+PS
+	0 ,//E-S
+	0 ,//E-PS
+	0 ,//E*
+	0 ,//E*P
+	0 ,//E/
+	0 ,//E/P
+	0 ,//ED+
+	0 ,//ED+P
+	0 ,//ED-
+	0 ,//ED-P
+	0 ,//ED+S
+	0 ,//ED+PS
+	0 ,//ED-S
+	0 ,//ED-PS
+	0 ,//ED*
+	0 ,//ED*P
+	0 ,//ED/
+	0 ,//ED/P
+	0 ,//BK+
+	0 ,//BK+P
+	0 ,//BK-
+	0 ,//BK-P
+	0 ,//DBK+
+	0 ,//DBK+P
+	0 ,//DBK-
+	0 ,//DBK-P
+	0 ,//$+
+	0 ,//$+P
+	0 ,//$+S
+	0 ,//$+PS
+	0 ,//INC
+	0 ,//INCP
+	0 ,//DEC
+	0 ,//DECP
+	0 ,//DINC
+	0 ,//DINCP
+	0 ,//DDEC
+	0 ,//DDECP
+	0 ,//BCDTOB
+	0 ,//BCDTOBP
+	0 ,//BCDTOD
+	0 ,//BCDTODP
+	0 ,//BLKTOB
+	0 ,//BLKTOBCD
+	0 ,//BLKTOBCDP
+	0 ,//BLKTOBP
+	0 ,//BTOBCD
+	0 ,//BTOBCDP
+	0 ,//BTOD
+	0 ,//BTODF
+	0 ,//BTODFP
+	0 ,//BTODP
+	0 ,//BTOF
+	0 ,//BTOFP
+	0 ,//BTOGRY
+	0 ,//BTOGRYP
+	0 ,//DFTOB
+	0 ,//DFTOBP
+	0 ,//DFTOD
+	0 ,//DFTODP
+	0 ,//DFTOF
+	0 ,//DFTOFP
+	0 ,//DTOB
+	0 ,//DTOBCD
+	0 ,//DTOBCDP
+	0 ,//DTOBP
+	0 ,//DTODF
+	0 ,//DTODFP
+	0 ,//DTOF
+	0 ,//DTOFP
+	0 ,//DTOGRY
+	0 ,//DTOGRYP
+	0 ,//FTOB
+	0 ,//FTOBP
+	0 ,//FTOD
+	0 ,//FTODF
+	0 ,//FTODFP
+	0 ,//FTODP
+	0 ,//GRYTOB
+	0 ,//GRYTOBP
+	0 ,//GRYTOD
+	0 ,//GRYTODP
+	0 ,//NEG
+	0 ,//NEGP
+	0 ,//DNEG
+	0 ,//DNEGP
+	0 ,//ENEG
+	0 ,//ENEGP
+	0 ,//DENEG
+	0 ,//DENEGP
+	0 ,//MOV
+	0 ,//DMOV
+	0 ,//EMOV
+	0 ,//EDMOV
+	0 ,//$MOV
+	0 ,//BMOV
+	0 ,//FMOV
+	0 ,//DFMOV
+	0 ,//MOVP
+	0 ,//DMOVP
+	0 ,//EMOVP
+	0 ,//EDMOVP
+	0 ,//$MOVP
+	0 ,//BMOVP
+	0 ,//FMOVP
+	0 ,//DFMOVP
+	0 ,//CML
+	0 ,//DCML
+	0 ,//CMLP
+	0 ,//DCMLP
+	0 ,//XCH
+	0 ,//DXCH
+	0 ,//BXCH
+	0 ,//XCHP
+	0 ,//DXCHP
+	0 ,//BXCHP
+	0 ,//SWAP
+	0 ,//SWAPP
+	0 ,//CJ
+	0 ,//SCJ
+	0 ,//JMP
+	0 ,//GOEND
+	0 ,//DI
+	0 ,//EI
+	0 ,//IMASK
+	0 ,//IRET
+	0 ,//RFS
+	0 ,//RFSP
+	0 ,//CNT
+	0 ,//CNTP
+	0 ,//TTMR
+	0 ,//STMR
+	0 ,//ROTC
+	0 ,//RAMP
+	0 ,//SPD
+	0 ,//PLSY
+	0 ,//PWM
+	0 ,//MTR
+	0 ,//POINT
+	0 ,//WAND
+	0 ,//WOR
+	0 ,//WXOR
+	0 ,//WXNR
+	0 ,//DAND
+	0 ,//DOR
+	0 ,//DXOR
+	0 ,//DXNR
+	0 ,//BKAND
+	0 ,//BKOR
+	0 ,//BKXOR
+	0 ,//BKXNR
+	0 ,//WANDP
+	0 ,//WORP
+	0 ,//WXORP
+	0 ,//WXNRP
+	0 ,//DANDP
+	0 ,//DORP
+	0 ,//DXORP
+	0 ,//DXNRP
+	0 ,//BKANDP
+	0 ,//BKORP
+	0 ,//BKXORP
+	0 ,//BKXNRP
+	0 ,//WANDS
+	0 ,//WORS
+	0 ,//WXORS
+	0 ,//WXNRS
+	0 ,//DANDS
+	0 ,//DORS
+	0 ,//DXORS
+	0 ,//DXNRS
+	0 ,//WANDSP
+	0 ,//WORSP
+	0 ,//WXORSP
+	0 ,//WXNRSP
+	0 ,//DANDSP
+	0 ,//DORSP
+	0 ,//DXORSP
+	0 ,//DXNRSP
+	0 ,//ROR
+	0 ,//RCR
+	0 ,//ROL
+	0 ,//RCL
+	0 ,//DROR
+	0 ,//DRCR
+	0 ,//DROL
+	0 ,//DRCL
+	0 ,//RORP
+	0 ,//RCRP
+	0 ,//ROLP
+	0 ,//RCLP
+	0 ,//DRORP
+	0 ,//DRCRP
+	0 ,//DROLP
+	0 ,//DRCLP
+	0 ,//SFR
+	0 ,//SFL
+	0 ,//BSFR
+	0 ,//BSFL
+	0 ,//WSFR
+	0 ,//WSFL
+	0 ,//SFRP
+	0 ,//SFLP
+	0 ,//BSFRP
+	0 ,//BSFLP
+	0 ,//WSFRP
+	0 ,//WSFLP
+	0 ,//BSET
+	0 ,//BRST
+	0 ,//BSETP
+	0 ,//BRSTP
+	0 ,//TEST
+	0 ,//TESTP
+	0 ,//DTEST
+	0 ,//DTESTP
+	0 ,//BKRST
+	0 ,//BKRSTP
+	0 ,//SRCH
+	0 ,//DSRCH
+	0 ,//SRCHP
+	0 ,//DSRCHP
+	0 ,//CHKSUM
+	0 ,//DCHKSUM
+	0 ,//CHKSUMP
+	0 ,//DCHKSUMP
+	0 ,//ENCODE
+	0 ,//DECODE
+	0 ,//ENCODEP
+	0 ,//DECODEP
+	0 ,//SEG
+	0 ,//SEGP
+	0 ,//DIS
+	0 ,//DISP
+	0 ,//UNI
+	0 ,//UNIP
+	0 ,//NDIS
+	0 ,//NDISP
+	0 ,//NUNI
+	0 ,//NUNIP
+	0 ,//WTOB
+	0 ,//BTOW
+	0 ,//WTOBP
+	0 ,//BTOWP
+	0 ,//MAX
+	0 ,//MAXP
+	0 ,//MIN
+	0 ,//MINP
+	0 ,//SORT
+	0 ,//DSORT
+	0 ,//WSUM
+	0 ,//DWSUM
+	0 ,//WSUMP
+	0 ,//DWSUMP
+	0 ,//FOR
+	0 ,//NEXT
+	0 ,//BREAK
+	0 ,//BREAKP
+	0 ,//CALL
+	0 ,//CALLP
+	0 ,//CALLS
+	0 ,//CALLSP
+	0 ,//RET
+	0 ,//FCALL
+	0 ,//FCALLP
+	0 ,//FCALLS
+	0 ,//FCALLSP
+	0 ,//XCALL
+	0 ,//COM
+	0 ,//IX
+	0 ,//IXEND
+	0 ,//IXDEV
+	0 ,//IXSET
+	0 ,//FIFW
+	0 ,//FIFWP
+	0 ,//FIFR
+	0 ,//FIFRP
+	0 ,//FPOP
+	0 ,//FPOPP
+	0 ,//FPDEL
+	0 ,//FPDELP
+	0 ,//FINS
+	0 ,//FINSP
+	0 ,//FROM
+	0 ,//FROMP
+	0 ,//DFROM
+	0 ,//DFROMP
+	0 ,//TO
+	0 ,//TOP
+	0 ,//DTO
+	0 ,//DTOP
+	0 ,//BTODA
+	0 ,//BTOHA
+	0 ,//DTODA
+	0 ,//DTOHA
+	0 ,//BCDTODA
+	0 ,//BCDTOHA
+	0 ,//DBCDTODA
+	0 ,//DBCDTOHA
+	0 ,//DATOB
+	0 ,//DATOD
+	0 ,//DATOBCD
+	0 ,//DATODBCD
+	0 ,//HATOB
+	0 ,//HATOD
+	0 ,//BTODAP
+	0 ,//BTOHAP
+	0 ,//DTODAP
+	0 ,//DTOHAP
+	0 ,//BCDTODAP
+	0 ,//BCDTOHAP
+	0 ,//DBCDTODAP
+	0 ,//DBCDTOHAP
+	0 ,//DATOBP
+	0 ,//DATODP
+	0 ,//DATOBCDP
+	0 ,//DATODBCDP
+	0 ,//HATOBP
+	0 ,//HATODP
+	0 ,//COMRD
+	0 ,//COMRDP
+	0 ,//LEN
+	0 ,//LENP
+	0 ,//BTOSTR
+	0 ,//BTOSTRP
+	0 ,//DTOSTR
+	0 ,//DTOSTRP
+	0 ,//STRTOB
+	0 ,//STRTOBP
+	0 ,//STRTOD
+	0 ,//STRTODP
+	0 ,//FTOSTR
+	0 ,//FTOSTRP
+	0 ,//STRTOF
+	0 ,//STRTOFP
+	0 ,//BTOASC
+	0 ,//BTOASCP
+	0 ,//ASCTOB
+	0 ,//ASCTOBP
+	0 ,//RIGHT
+	0 ,//LEFT
+	0 ,//MIDR
+	0 ,//MIDW
+	0 ,//INSTR
+	0 ,//STRINS
+	0 ,//STRDEL
+	0 ,//RIGHTP
+	0 ,//LEFTP
+	0 ,//MIDRP
+	0 ,//MIDWP
+	0 ,//INSTRP
+	0 ,//STRINSP
+	0 ,//STRDELP
+	0 ,//FTOBCD
+	0 ,//FTOBCDP
+	0 ,//BCDTOF
+	0 ,//BCDTOFP
+	0 ,//SIN
+	0 ,//COS
+	0 ,//TAN
+	0 ,//ASIN
+	0 ,//ACOS
+	0 ,//ATAN
+	0 ,//SINP
+	0 ,//COSP
+	0 ,//TANP
+	0 ,//ASINP
+	0 ,//ACOSP
+	0 ,//ATANP
+	0 ,//RAD
+	0 ,//RADP
+	0 ,//SQR
+	0 ,//SQRP
+	0 ,//EXP
+	0 ,//EXPP
+	0 ,//LOG
+	0 ,//LOGP
+	0 ,//POW
+	0 ,//POWP
+	0 ,//LOG10
+	0 ,//LOG10P
+	0 ,//RANDOM
+	0 ,//RANDOMP
+	0 ,//SRANDOM
+	0 ,//SRANDOMP
+	0 ,//BSQR
+	0 ,//DSQR
+	0 ,//BSQRP
+	0 ,//DSQRP
+	0 ,//BSIN
+	0 ,//BCOS
+	0 ,//BTAN
+	0 ,//BASIN
+	0 ,//BACOS
+	0 ,//BATAN
+	0 ,//BSINP
+	0 ,//BCOSP
+	0 ,//BTANP
+	0 ,//BASINP
+	0 ,//BACOSP
+	0 ,//BATANP
+	0 ,//LIMIT
+	0 ,//DLIMIT
+	0 ,//LIMITP
+	0 ,//DLIMITP
+	0 ,//BAND
+	0 ,//BANDP
+	0 ,//DBAND
+	0 ,//DBANDP
+	0 ,//ZONE
+	0 ,//ZONEP
+	0 ,//DZONE
+	0 ,//DZONEP
+	0 ,//RSET
+	0 ,//RSETP
+	0 ,//DATERD
+	0 ,//DATERDP
+	0 ,//DATEWR
+	0 ,//DATEWRP
+	0 ,//DATE+
+	0 ,//DATE+P
+	0 ,//DATE-
+	0 ,//DATE-P
+	0 ,//SECOND
+	0 ,//SECONDP
+	0 ,//HOUR
+	0 ,//HOURP
+	0 ,//WDT
+	0 ,//WDTP
+	0 ,//DUTY
+	0 ,//TIMCHK
+	0 ,//ZRRDB
+	0 ,//ZRRDBP
+	0 ,//ZRWRP
+	0 ,//ZRWRBP
+	0 ,//ADRSET
+	0 ,//ADRSETP
+	0 ,//ZPUSH
+	0 ,//ZPUSHP
+	0 ,//ZPOP
+	0 ,//ZPOPP
+	0 ,//UNIRD
+	0 ,//UNIRDP
+};
+*/
+static uint32 blockExpected[24][10] = {
+	{	0, 31, 0, 0, 0, 127, 0, 0, 0, 0},
+	{	127, 96, 127, 127, 127, 0, 127, 127, 127, 127},
+	{	0, 0, 31, 0, 0, 0, 127, 127, 127, 127},
+	{	127, 96, 96, 127, 127, 0, 0, 0, 0, 0},
+	{	0, 31, 31, 0, 0, 127, 127, 127, 127, 127},
+	{	127, 127, 96, 127, 127, 127, 0, 0, 0, 0},
+	{	0, 0, 0, 0, 0, 127, 0, 0, 0, 0},
+	{	127, 127, 127, 127, 127, 0, 127, 127, 127, 127},
+	{	0, 0, 0, 0, 0, 0, 127, 127, 127, 127},
+	{	127, 127, 127, 127, 127, 0, 0, 0, 0, 0},
+	{	0, 0, 0, 0, 0, 127, 127, 127, 127, 127},
+	{	127, 127, 127, 127, 127, 127, 0, 0, 0, 0},
+	{	0, 31, 0, 0, 0, 127, 0, 0, 0, 0},
+	{	127, 96, 127, 127, 127, 0, 127, 127, 127, 127},
+	{	0, 0, 31, 0, 0, 0, 127, 127, 127, 127},
+	{	127, 96, 96, 127, 127, 0, 0, 0, 0, 0},
+	{	0, 31, 31, 0, 0, 127, 127, 127, 127, 127},
+	{	127, 127, 96, 127, 127, 127, 0, 0, 0, 0},
+	{	0, 0, 0, 0, 0, 127, 0, 0, 0, 0},
+	{	127, 127, 127, 127, 127, 0, 127, 127, 127, 127},
+	{	0, 0, 0, 0, 0, 0, 127, 127, 127, 127},
+	{	127, 127, 127, 127, 127, 0, 0, 0, 0, 0},
+	{	0, 0, 0, 0, 0, 127, 127, 127, 127, 127},
+	{	127, 127, 127, 127, 127, 127, 0, 0, 0, 0},
+
+};
+
+static float floatExpected_EADD_to_EDIVP[12] = {
+	0.3f ,	//E+
+	0.2f ,//E+P
+	-0.1f ,//E-
+	0.0f ,//E-P
+	0.2f ,//E+S
+	0.2f ,//E+PS
+	0.0f ,//E-S
+	0.0f ,//E-PS
+	1.32f ,//E*
+	1.32f ,//E*P
+	5.0f ,//E/
+	5.0f ,//E/P
+};
+static float doubleExpected_EDADD_to_EDDIVP[12] = {
+	0.3f ,	//ED+
+	0.2f ,//ED+P
+	-0.1f ,//ED-
+	0.0f ,//ED-P
+	0.2f ,//ED+S
+	0.2f ,//ED+PS
+	0.0f ,//ED-S
+	0.0f ,//ED-PS
+	1.32f ,//ED*
+	1.32f ,//ED*P
+	5.0f ,//ED/
+	5.0f ,//ED/P
+};
+
+void addMLPointLabel(uint16 label)
+{
+	/*
+	inputInstruction[inputInstructionPoint++] = (ML_CODE_POINT/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (ML_CODE_POINT%256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (label/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (label%256)&0x0FF;*/
+	short ml_point = ML_CODE_POINT;
+	memcpy(&inputInstruction[inputInstructionPoint], &ml_point, sizeof(short));
+	inputInstructionPoint+=2;
+	inputInstruction[inputInstructionPoint++] = OPERAND_ML_CODE_K;
+	memcpy(&inputInstruction[inputInstructionPoint], &label, sizeof(short));
+	inputInstructionPoint+=2;
+}
+void addMLOperator(uint16 operator_ml)
+{
+	/*
+	inputInstruction[inputInstructionPoint++] = (operator_ml/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (operator_ml%256)&0x0FF;
+	*/
+	memcpy(&inputInstruction[inputInstructionPoint], &operator_ml, sizeof(short));
+	inputInstructionPoint+=2;
+	//printf("inputInstructionPoint = %d\n", inputInstructionPoint);
+}
+void addMLOperand(uint8 type, uint32 value) {
+	inputInstruction[inputInstructionPoint++] = type;
+
+	if(type==OPERAND_ML_CODE_DK )
+	{
+/*
+		inputInstruction[inputInstructionPoint++] = (value)&0x0FF;
+		inputInstruction[inputInstructionPoint++] = (value/256)&0x0FF;
+		inputInstruction[inputInstructionPoint++] = (value/256/256)&0x0FF;
+		inputInstruction[inputInstructionPoint++] = (value/256/256/256)&0x0FF;
+		*/
+		memcpy(&inputInstruction[inputInstructionPoint], &value, sizeof(uint32));
+		inputInstructionPoint+=4;
+	}
+	else if(type==OPERAND_ML_CODE_K){
+		/*
+		inputInstruction[inputInstructionPoint++] = (value)&0x0FF;
+		inputInstruction[inputInstructionPoint++] = (value/256)&0x0FF;
+		*/
+		memcpy(&inputInstruction[inputInstructionPoint], &value, sizeof(uint16));
+		inputInstructionPoint+=2;
+
+
+	}
+	else{
+
+		memcpy(&inputInstruction[inputInstructionPoint], &value, sizeof(uint16));
+		inputInstructionPoint+=2;
+		/*
+		inputInstruction[inputInstructionPoint++] = (value/256)&0x0FF;
+		inputInstruction[inputInstructionPoint++] = (value%256)&0x0FF;
+		*/
+	}
+	//printf("input reservation : %s%d\n",opndic[type].strType,value );
+}
+uint8 addMLFile(char* MLFilePathName, uint8 taskIdx, uint32 crc){
+
+	//char* fileName = "C:/Users/skson/Documents/out/outputML.oml";
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	uint8 rst;
+	if(MLFilePathName==NULL)
+	{
+		DBG_LOGPRINT("ML file name is null!\n");
+		return FALSE;
+	}
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	FILE* inFile = fopen(MLFilePathName, "r");
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	if(!inFile)
+	{
+		DBG_LOGPRINT("ML file name is unreadable!\n");
+		return FALSE;
+	}
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	fseek(inFile, 0, SEEK_END);
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	uint32 fsize = ftell(inFile);
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	fseek(inFile, 0, SEEK_SET);
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	char* stackML = malloc(fsize+1);
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	fread(stackML, fsize, 1, inFile);
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	fclose(inFile);
+	stackML[fsize] = 0;
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	if(fsize > INSTRUCTION_MEMORY_SIZE)
+	{
+		DBG_LOGPRINT("ML file fsize is invalid!\n");
+		return FALSE;
+	}
+	memcpy(&inputInstruction[inputInstructionPoint], stackML, fsize);
+	inputInstructionPoint+=fsize;
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+
+	rst = (crc == crc16(stackML, fsize));
+	if(!rst)
+		DBG_LOGPRINT("crc check : rst : %d | exp = %d\n", crc16(stackML, fsize), crc);
+	free(stackML);
+	//DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+
+	return rst;
+}
+uint8 reloadMLfile(char* MLFilePathName, uint8 taskIdx, uint32 crc, LaunchingCondition condition){
+//	/DBG_LOGPRINT("[%s] [%d]\n", __func__, __LINE__);
+	memset(inputInstruction, 0, INSTRUCTION_MEMORY_SIZE);
+	DBG_LOGPRINT("[%s] [taskIdx %d]\n", MLFilePathName, taskIdx);
+	inputInstructionPoint = 0;
+	if(!addMLFile(MLFilePathName, taskIdx, crc))
+	{
+		DBG_LOGPRINT("[ERROR] addMLFile failed!\n");
+		return FALSE;
+	}
+
+	return PLC_TaskExecutor_reloadTask(inputInstruction, inputInstructionPoint, taskIdx, condition);
+}
+void addMLOperandFloat(uint8 type, float fvalue){
+	if(type==OPERAND_ML_CODE_E)
+	{
+		//uint8* value = (uint8*)&fvalue;
+		inputInstruction[inputInstructionPoint++] = type;
+		memcpy(&inputInstruction[inputInstructionPoint], &fvalue, sizeof(float));
+		inputInstructionPoint+= 4;
+		//printf("inputInstructionPoint : %d\n", inputInstructionPoint);
+	}
+	else
+	{
+		addMLOperand(type, (uint32)fvalue);
+	}
+}
+void addMLOperandDouble(uint8 type, double dvalue){
+	if(type==OPERAND_ML_CODE_DE)
+	{
+		//uint8* value = (uint8*)&dvalue;
+		inputInstruction[inputInstructionPoint++] = type;
+		memcpy(&inputInstruction[inputInstructionPoint], &dvalue, sizeof(double));
+		inputInstructionPoint+= 8;
+	}
+	else
+	{
+		addMLOperand(type, (uint32)dvalue);
+	}
+}
+void addConstantStringoperand(char* strValue) {
+	inputInstruction[inputInstructionPoint++] = OPERAND_ML_CODE_STR;
+	uint16 length = strlen(strValue)+1;
+	memcpy((char*)&inputInstruction[inputInstructionPoint], strValue, length);
+	inputInstructionPoint+=length;
+}
+
+void addMLOperandNibble(uint16 nibbleCount, uint8 deviceType, uint16 deviceAddress){
+	inputInstruction[inputInstructionPoint++] = OPERAND_ML_CODE_N;
+	/*
+	inputInstruction[inputInstructionPoint++] = (nibbleCount/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (nibbleCount%256)&0x0FF;*/
+	memcpy(&inputInstruction[inputInstructionPoint], &nibbleCount, sizeof(uint16));
+	inputInstructionPoint+=  sizeof(uint16);
+	/*
+	inputInstruction[inputInstructionPoint++] = (deviceAddress/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (deviceAddress%256)&0x0FF;
+	*/
+	inputInstruction[inputInstructionPoint++] = deviceType;
+	memcpy(&inputInstruction[inputInstructionPoint], &deviceAddress, sizeof(uint16));
+	inputInstructionPoint+=  sizeof(uint16);
+	//printf("Nibble Operator Set : NC %d Type %d Addr%d \n", nibbleCount, deviceType, deviceAddress);
+}
+void addMLOperandWordBit(uint8 devType, uint16 devAddr,  uint16 bitAddr){
+	inputInstruction[inputInstructionPoint++] = OPERAND_ML_CODE_WB;
+	/*
+	inputInstruction[inputInstructionPoint++] = (devAddr/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (devAddr%256)&0x0FF;
+	*/
+	memcpy(&inputInstruction[inputInstructionPoint], &bitAddr, sizeof(uint16));
+	inputInstructionPoint+=  sizeof(uint16);
+	/*
+	inputInstruction[inputInstructionPoint++] = (bitAddr/256)&0x0FF;
+	inputInstruction[inputInstructionPoint++] = (bitAddr%256)&0x0FF;
+	*/
+	inputInstruction[inputInstructionPoint++] = devType;
+	memcpy(&inputInstruction[inputInstructionPoint], &devAddr, sizeof(uint16));
+	inputInstructionPoint+=  sizeof(uint16);
+
+}
+void addMLOperandZIndex(uint8 operandType, uint16 value, uint16 zIdx){
+	inputInstruction[inputInstructionPoint++] = OPERAND_ML_CODE_Z;
+	//DBG_LOGPRINT("[Z%d %s %d]\n",zIdx, opndic[operandType].strType, value);
+	uint16 zValue = 0x0FF&zIdx;
+	memcpy(&inputInstruction[inputInstructionPoint], &zValue, sizeof(uint16));
+	inputInstructionPoint+=  sizeof(uint16);
+	//inputInstruction[inputInstructionPoint++] = zValue;
+	//printf("%d ",zIdx);
+	inputInstruction[inputInstructionPoint++] = operandType;
+	//printf("%d ",operandType);
+	/*
+	inputInstruction[inputInstructionPoint++] = (value/256)&0x0FF;
+	//printf("%d ",(value/256)&0x0FF);
+	inputInstruction[inputInstructionPoint++] = (value%256)&0x0FF;
+	//printf("%d\n",(value%256)&0x0FF);
+	 */
+	memcpy(&inputInstruction[inputInstructionPoint], &value, sizeof(uint16));
+	inputInstructionPoint+=  sizeof(uint16);
+
+}
+
+void addDeviceControlInstruction(uint32 time, uint8 operandType, uint16 operandAddr, uint32 value) {
+	PLC_DEVICE_ControlInstruction currControlInstruction = {time, {operandType, 0x0FF&(operandAddr%256), 0x0FF&operandAddr/256}, value};
+	memcpy(&control[deviceControlPoint++], &currControlInstruction, sizeof(PLC_DEVICE_ControlInstruction));
+
+	//printf("[T%d]WORD [%s%d] =>[%04X]\n", time, PLC_OPERAND_DICTIONARY_findOperand(operandType)->strType, operandAddr, 0x0FFFF&value);
+
+}
+
+void addDeviceControlInstructionToDWord(uint32 time, uint8 operandType, uint16 operandAddr, uint32 dwordValue) {
+	uint16* values = (uint16*)&dwordValue;
+	addDeviceControlInstruction(time, operandType, operandAddr, values[0]);
+	addDeviceControlInstruction(time, operandType, operandAddr+1, values[1]);
+	/*printf("DWORD [%s%d] = [%08X]=>[%04X[1] %04X[0]]\n",
+				PLC_OPERAND_DICTIONARY_findOperand(operandType)->strType, operandAddr, dwordValue, values[1],values[0]);
+*/
+
+}
+
+void addDeviceControlInstructionToFloat(uint32 time, uint8 operandType, uint16 operandAddr, float fValue) {
+
+	uint16* values = (uint16*)&fValue;
+	/*PLC_DEVICE_ControlInstruction currControlInstruction2 = {time, {operandType, operandValue, operandValue%256}, values[0]};
+	PLC_DEVICE_ControlInstruction currControlInstruction1 = {time, {operandType, (operandValue+1)/256, (operandValue+1)%256}, values[1]};
+	memcpy(&control[deviceControlPoint++], &currControlInstruction1, sizeof(PLC_DEVICE_ControlInstruction));
+	memcpy(&control[deviceControlPoint++], &currControlInstruction2, sizeof(PLC_DEVICE_ControlInstruction));*/
+	addDeviceControlInstruction(time, operandType, operandAddr, values[0]);
+	addDeviceControlInstruction(time, operandType, operandAddr+1, values[1]);
+
+	/*printf("FLOAT [%f (%X)] : [%s%d] =>[%04X], [%s%d] => [%04X]\n",
+			fValue,*(int*)&fValue, PLC_OPERAND_DICTIONARY_findOperand(operandType)->strType, operandAddr,
+			values[0],
+			PLC_OPERAND_DICTIONARY_findOperand(operandType)->strType, operandAddr+1,
+			values[1]);*/
+}
+
+void addDeviceControlInstructionToDouble(uint32 time, uint8 operandType, uint16 operandAddr, double fValue) {
+	uint16* values = (uint16*)&fValue;
+
+	addDeviceControlInstruction(time, operandType, operandAddr, values[0]);
+	addDeviceControlInstruction(time, operandType, operandAddr+1, values[1]);
+	addDeviceControlInstruction(time, operandType, operandAddr+2, values[2]);
+	addDeviceControlInstruction(time, operandType, operandAddr+3, values[3]);
+	//printf("DOUBLE [%s%d] = [%f]=>[%04X %04X %04X %04X]\n",
+		//		PLC_OPERAND_DICTIONARY_findOperand(operandType)->strType, operandType, fValue, values[3],values[2], values[1],values[0]);
+}
+void addDeviceControlInstructionToString(uint32 time, uint8 operandType, uint16 operandAddr, char* strValue)
+{
+	uint16 wordLength = (strlen(strValue)+1)/2;
+	uint16* values = (uint16*)strValue;
+	int i;
+	for(i=0;i<wordLength;i++)
+	{
+		addDeviceControlInstruction(time, operandType, operandAddr+i, values[i]);
+	}
+}
+void addDeviceControlNibble(uint32 time, uint8 operandType, uint16 operandAddr, uint8  nibbleCount, uint8 nibbleValue){
+
+	PLC_DEVICE_ControlInstruction currControlInstruction = {
+			time, {OPERAND_ML_CODE_N, 0x0FF&(1%256), 0x0FF&(1/256), operandType, operandAddr}, nibbleValue
+	};
+	memcpy(&control[deviceControlPoint++], &currControlInstruction, sizeof(PLC_DEVICE_ControlInstruction));
+}
+void addDeviceControlBit(uint32 time, uint8 operandType, uint16 operandAddr, uint8 bitValue){
+
+}
+void addDeviceControlWordBit(uint32 time, uint8 operandType, uint16 bitAddr, uint16 bitValue){
+
+}
+void TestCodeInit(){
+	PLC_TaskExecutor_init();
+	inputInstructionPoint=0;
+	deviceControlPoint = 0;
+}
+
+void TestCodeTearDown(){
+	nCurrMeMorySize = inputInstructionPoint;
+
+	Task_loadTasksFromBuffers(inputInstruction, inputInstructionPoint, 0, CONDITION_ALWAYS_EXEC);
+}
+
+void TestCodeTearDownByTaskIdx(uint8 taskIdx){
+	nCurrMeMorySize = inputInstructionPoint;
+	Task_loadTasksFromBuffers(inputInstruction, inputInstructionPoint, taskIdx, CONDITION_ALWAYS_EXEC);
+}
+
+int runTestCode(int run_step, char* nameTest){
+	//DBG_LOGPRINT("input size = %d\n", inputInstruction);
+	if(!PLC_TaskExecutor_execWithDeviceControl_Test(
+			run_step,
+			0))
+	{
+		//PLC_LOG_printSavedLog();
+		DBG_LOGPRINT("[FATAL ERROR] on test :%s\n", nameTest);
+		return TRUE;
+	}
+	//QueueLog_print();
+	//ScanTimeLog_print();
+	return FALSE;
+}
+
+void setUserLDProgram(void(*userProgram)(void)){
+	userLDProgram = userProgram;
+}
+
+void* getUserLDProgram(){
+	return userLDProgram;
+}
+void setUserLuntimeInitFunction(uint8(*userProgram)(void)){
+	userInitFunction = userProgram;
+}
+void* getUserLuntimeInitFunction(){
+	return userInitFunction;
+}
+void setUserLuntimeFunction(uint8(*userProgram)(void)){
+	userExecFunction= userProgram;
+}
+void* getUserLuntimeFunction(){
+	return userExecFunction;
+}
+
+void setTestCase(uint16 mlCode, void (*setUserProgram)(void)) {
+	TestCodeInit();
+	if(setUserProgram!=NULL)
+		setUserProgram();
+	else{
+		printf("ERROR : User LD program is not loaded!\n");
+	}
+	TestCodeTearDown();
+
+}
+
+int init_suite_EXEC_SUITE()
+{
+
+	PLC_DEVICE_Init();
+	return 0;
+}
+
+int clean_suite_EXEC_SUITE()
+{
+
+	PLC_DEVICE_Init();
+	return 0;
+}
+
+static int currML = 0;
+
+uint8 initExecSuite(){
+	setTestCase(currML, getUserLDProgram());
+	if(!userInitFunction())
+	{
+		printf("[Error] User initiation Error!\n");
+		return FALSE;
+	}
+	if(!PLC_TaskExecutor_init())
+	{
+		printf("[Error] Device executor initiation Error!\n");
+		queueFatalError[countFatalError] = currML;
+		//DBG_LOGPRINT("[FATAL ERROR] on test :%s\n", PLC_OPERATOR_DICTIONARY_getOperatorName(currML));
+		countFatalError++;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+uint8 runExecSuiteOnce(){
+
+	if(!userExecFunction())
+	{
+		printf("User function error!\n");
+		return FALSE;
+	}
+	if(!PLC_TaskExecutor_exec(0))
+	{
+		printf("PLC function error!\n");
+		queueFatalError[countFatalError] = currML;
+		//DBG_LOGPRINT("[FATAL ERROR] on test :%s\n", PLC_OPERATOR_DICTIONARY_getOperatorName(currML));
+		countFatalError++;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
+void test_suite_EXEC_SUITE() {
+	int i;
+	//init
+
+	PLC_DEVICE_Init();
+	int resultOfTest=TRUE;
+	uint32 actual;
+	//set
+
+	//run
+	if(!initExecSuite())
+	{
+		resultOfTest=FALSE;
+	}
+	else{
+		while(PLC_TaskExecutor_getDevice()->nCurrTimeScan<scanCount || scanCount<0)
+		{
+			//PLC_TaskExecutor_getDevice()->nExecTime++;
+			if(FLAG_SYSTEM_HOLD==1)
+				continue;
+			if(!runExecSuiteOnce())
+			{
+				resultOfTest=FALSE;
+				break;
+			}
+		}
+	}
+
+#ifdef USE_CUNIT_TEST_DEF
+	/*if(!PLC_TaskExecutor_execWithDeviceControl_Test(inputInstruction, control,scanCount, deviceControlPoint, 0, nCurrMeMorySize))
+	{
+		//PLC_LOG_printSavedLog();
+		resultOfTest=FALSE;
+		queueFatalError[countFatalError] = currML;
+		DBG_LOGPRINT("[FATAL ERROR] on test :%s\n", PLC_OPERATOR_DICTIONARY_getOperatorName(currML));
+		countFatalError++;
+	}*/
+
+	//check
+	if(resultOfTest)
+	{
+		if(isBlockTest)
+		{
+
+			for(i=0;i<10;i++)
+			{
+				if((CU_ASSERT_EQUAL(PLC_Register_getBit(OPERAND_ML_CODE_Y, i), (0x01&blockExpected[currExpected][i])))==FALSE)
+				{
+					resultOfTest = FALSE;
+					DBG_LOGPRINT("\n[TEST] actual : [Y00~Y09]%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|\n"
+							"[TEST] expect : [Y00~Y09]%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|%3d|\n",
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 0),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 1),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 2),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 3),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 4),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 5),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 6),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 7),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 8),
+							PLC_Register_getBit(OPERAND_ML_CODE_Y, 9),
+							0x01&blockExpected[currExpected][0],
+							0x01&blockExpected[currExpected][1],
+							0x01&blockExpected[currExpected][2],
+							0x01&blockExpected[currExpected][3],
+							0x01&blockExpected[currExpected][4],
+							0x01&blockExpected[currExpected][5],
+							0x01&blockExpected[currExpected][6],
+							0x01&blockExpected[currExpected][7],
+							0x01&blockExpected[currExpected][8],
+							0x01&blockExpected[currExpected][9]);
+					//PLC_DEVICE_addLog(buff);
+				}
+			}
+		}
+		else if(isValueTest==WORD_RST)
+		{
+			//actual = dev.WX[4];
+			actual = PLC_Register_getWord(OPERAND_ML_CODE_D, 4);
+
+			resultOfTest = (CU_ASSERT_EQUAL(actual, currExpected));
+		}
+		else if(isValueTest==DWORD_RST)
+		{
+			//actual = dev.WX[4]+dev.WX[5]*0x00010000;
+			actual = PLC_Register_getDWord(OPERAND_ML_CODE_D, 4);
+			//DBG_LOGPRINT("[TEST] actual %d / currExpected %d\n",actual, currExpected);
+			resultOfTest = (CU_ASSERT_EQUAL(actual, currExpected));
+		}
+		else if(isValueTest==LONG_RST)
+		{
+			unsigned long long *actual_long = (unsigned long long *)PLC_Register_getPos(OPERAND_ML_CODE_D, 4, TYPE_LONG);//&dev.WX[4];
+
+			//DBG_LOGPRINT("[TEST] actual %llX / currExpected %llX\n",*actual_long, currExpected);
+			resultOfTest = (CU_ASSERT_EQUAL(*actual_long, currExpected));
+
+		}
+		else if(isValueTest==FLOAT_RST)
+		{
+			//float *actual_float = (float*)&dev.WX[4];
+			float actual_float = PLC_Register_getFloat(OPERAND_ML_CODE_D, 4);
+			float currExpected_float = floatExpected_EADD_to_EDIVP[currML-ML_CODE_EADD];
+			resultOfTest = (CU_ASSERT_DOUBLE_EQUAL(actual_float, currExpected_float, currExpected_float/10));
+			//DBG_LOGPRINT("[TEST] actual %f / currExpected %f\n",*actual_float, currExpected_float);
+		}
+		else if(isValueTest==DOUBLE_RST)
+		{
+			//double *actual_double = (double*)&dev.WX[8];
+			double actual_double = PLC_Register_getDouble(OPERAND_ML_CODE_D, 8);
+			double currExpected_double = doubleExpected_EDADD_to_EDDIVP[currML-ML_CODE_EDADD];
+			resultOfTest = (CU_ASSERT_DOUBLE_EQUAL(actual_double, currExpected_double, currExpected_double/10));
+			DBG_LOGPRINT("[TEST] actual %f / currExpected %f\n",actual_double, currExpected_double);
+		}
+		else
+		{
+			//actual = dev.Y[0];//STACK_pick(&(dev.device_stack))&0x01;
+			actual = PLC_Register_getBit(OPERAND_ML_CODE_Y, 0);
+			//DBG_LOGPRINT("[TEST] actual %d / currExpected %d\n",actual, currExpected);
+
+			resultOfTest = (CU_ASSERT_EQUAL(actual, currExpected%2));
+
+		}
+	}
+	//printf("resultOfTest = %d\n", resultOfTest);
+	PLC_DEVICE_printChangedRegisterLog();
+	if(resultOfTest==FALSE)
+	//if(1)
+	{
+
+		DBG_LOGPRINT("--------------\n[TEST CASE :%s] FAILED.\n"
+				"==========================================================\n",
+				PLC_OPERATOR_DICTIONARY_getOperatorName(currML));
+		//DBG_LOGPRINT("[TEST] actual %d(%X) / currExpected %ld(%lX)\n",actual,actual, currExpected, currExpected);
+		//PLC_LOG_printSavedLog();
+
+
+	}
+	else
+	{
+
+		DBG_LOGPRINT("\n--------------\n[TEST CASE :%s] PASSED.\n"
+				"==========================================================\n",
+				PLC_OPERATOR_DICTIONARY_getOperatorName(currML));
+		//PLC_DEVICE_printChangedRegisterLog();
+
+		//PLC_LOG_printSavedLog();
+	}
+
+	//PLC_LOG_clearDebugBuffer();
+	currML++;
+#endif
+}
+
+
+#ifdef USE_CUNIT_TEST_DEF
+uint32 run_suite_EXEC_SUITE() {
+	scanCount = 9;
+	int startOperator = ML_CODE_LDEQ;
+
+	memset(queueFatalError, 0, sizeof(queueFatalError));
+
+
+	currML = startOperator;
+
+	CU_pSuite pSuite = NULL;
+	//
+
+	if (CUE_SUCCESS != CU_initialize_registry())
+	return CU_get_error();
+/*
+ 	int endOperator = ML_CODE_LDEQ;
+ 	int index;
+	for(index=startOperator; index<endOperator+1;index++)
+	{
+
+		pSuite = CU_add_suite(PLC_OPERATOR_DICTIONARY_getOperatorName(index), init_suite_EXEC_SUITE, clean_suite_EXEC_SUITE);
+		if (NULL == pSuite) {
+			CU_cleanup_registry();
+			return CU_get_error();
+		}
+		if ((NULL == CU_add_test(pSuite, PLC_OPERATOR_DICTIONARY_getOperatorName(index), test_suite_EXEC_SUITE)))
+		{
+			CU_cleanup_registry();
+			return CU_get_error();
+		}
+
+	}*/
+#if 0
+	pSuite = CU_add_suite("MY PLC SUITE", init_suite_EXEC_SUITE, clean_suite_EXEC_SUITE);
+	if (NULL == pSuite) {
+		CU_cleanup_registry();
+		return CU_get_error();
+	}
+	if ((NULL == CU_add_test(pSuite, "MY PLC TEST", test_suite_EXEC_SUITE)))
+	{
+		CU_cleanup_registry();
+		return CU_get_error();
+	}
+
+/*
+	for(index=startOperator; index<endOperator+1;index++)
+	{
+
+		pSuite = CU_add_suite(PLC_OPERATOR_DICTIONARY_getOperatorName(index), init_suite_EXEC_SUITE, clean_suite_EXEC_SUITE);
+		if (NULL == pSuite) {
+			//printf("%s %d %s %d\n",__FUNCTION__,__LINE__, PLC_OPERATOR_DICTIONARY_getOperatorName(index), index);
+			CU_cleanup_registry();
+			return CU_get_error();
+		}
+		if ((NULL == CU_add_test(pSuite, PLC_OPERATOR_DICTIONARY_getOperatorName(index), test_suite_EXEC_SUITE)))
+		{
+			CU_cleanup_registry();
+			return CU_get_error();
+		}
+
+	} */
+#else
+	pSuite = CU_add_suite("[PLC command unit test]", init_suite_EXEC_SUITE, clean_suite_EXEC_SUITE);
+	if (NULL == pSuite) {
+		CU_cleanup_registry();
+		return CU_get_error();
+	}
+
+	//printf("long=%d\n", sizeof(long long));
+	//CU_add_test(pSuite, "TimerTest", timerTest);
+	//CU_add_test(pSuite, "sequence command_test", testSequenceCommand);
+	//CU_add_test(pSuite, "sequence Wordbit command_test", testSequenceWB2BRCommand);
+	//CU_add_test(pSuite, "sequence Wb2wb command_test", testSequenceWB2WBCommand);
+
+	//CU_add_test(pSuite, "sequence extra command_test", testSequenceCommandExtra);
+
+	//CU_add_test(pSuite, "compare word command_test", testBasicCompareWordCommand);
+	//CU_add_test(pSuite, "compare word nibble command_test", testBasicCompareWordNibbleCommand);
+	//CU_add_test(pSuite, "compare word index command_test", testBasicCompareWordIndexCommand);
+	//CU_add_test(pSuite, "compare Dword command_test", testBasicCompareDWordCommand);
+	//CU_add_test(pSuite, "compare Dword nibble command_test", testBasicCompareDWordNibbleCommand);
+	//CU_add_test(pSuite, "compare Dword index command_test", testBasicCompareDwordIndexCommand);
+
+	//CU_add_test(pSuite, "compare Float command_test", testBasicCompareFloatCommand);
+	//CU_add_test(pSuite, "compare Float index command_test", testBasicCompareFloatIndexCommand);
+	//CU_add_test(pSuite, "compare Double command_test", testBasicCompareDoubleCommand);
+	//CU_add_test(pSuite, "compare Double index command_test", testBasicCompareDoubleIndexCommand);
+	//CU_add_test(pSuite, "compare String command_test", testBasicCompareStringCommand);
+	//CU_add_test(pSuite, "compare word Block command_test", testBasicCompareWordBlockCommand);
+	//CU_add_test(pSuite, "compare Dword Block command_test", testBasicCompareDWordBlockCommand);
+
+	//CU_add_test(pSuite, "Arithmetic word command_test", testBasicArithmeticWordCommand);
+	//CU_add_test(pSuite, "Arithmetic word nibble command_test", testBasicArithmeticWordNibbleCommand);
+	//CU_add_test(pSuite, "Arithmetic word index_test", testBasicArithmeticWordIndexCommand);
+	//CU_add_test(pSuite, "Arithmetic word multi div command_test", testBasicArithmeticMulCommand);
+	//CU_add_test(pSuite, "Arithmetic word multi div nibble command_test", testBasicArithmeticMulNibbleCommand);
+	//CU_add_test(pSuite, "Arithmetic word multi div index command_test", testBasicArithmeticMulIndexCommand);
+	//CU_add_test(pSuite, "Arithmetic Dword command_test", testBasicArithmeticDWordCommand);
+	//CU_add_test(pSuite, "Arithmetic Dword nibble command_test", testBasicArithmeticDWordNibbleCommand);
+
+	//CU_add_test(pSuite, "Arithmetic Dword index command_test", testBasicArithmeticDWordIndexCommand);
+
+	//CU_add_test(pSuite, "Arithmetic Dword multi command_test", testBasicArithmeticDWordMulCommand);
+	//CU_add_test(pSuite, "Arithmetic Dword multi div nibble command_test", testBasicArithmeticDWordMulNibbleCommand);
+	//CU_add_test(pSuite, "Arithmetic Dword multi div index command_test", testBasicArithmeticDWordMulIndexCommand);
+	//CU_add_test(pSuite, "Arithmetic float command_test", testBasicArithmeticFloatCommand);
+	//CU_add_test(pSuite, "Arithmetic float index command_test", testBasicArithmeticFloatIndexCommand);
+	//CU_add_test(pSuite, "Arithmetic String command_test", testBasicArithmeticStringCommand);
+	//CU_add_test(pSuite, "Arithmetic Block command_test", testBasicArithmeticBlockCommand);
+
+
+	/*CU_add_test(pSuite, "Conversion word command_test", testConversionWordCommand);
+	CU_add_test(pSuite, "Conversion word Nibble command_test", testConversionWordNibbleCommand);
+
+	CU_add_test(pSuite, "Conversion word index command_test", testConversionWordIndexCommand);
+	CU_add_test(pSuite, "Conversion Dword command_test", testConversionDWordCommand);
+	CU_add_test(pSuite, "Conversion Dword nibble command_test", testConversionDWordNibbleCommand);
+	CU_add_test(pSuite, "Conversion Dword index command_test", testConversionDWordIndexCommand);
+	CU_add_test(pSuite, "Conversion Float command_test", testConversionFloatCommand);
+	CU_add_test(pSuite, "Conversion Float index command_test", testConversionFloatIndexCommand);*/
+	//CU_add_test(pSuite, "Conversion extra command_test", testConversionExtraCommand);
+
+	/*CU_add_test(pSuite, "Transfer word command_test", testTransferWordCommand);
+	CU_add_test(pSuite, "Transfer word nibble command_test", testTransferWordNibbleCommand);
+	CU_add_test(pSuite, "Transfer word index command_test", testTransferWordIndexCommand);
+	CU_add_test(pSuite, "Transfer Dword command_test", testTransferDWordCommand);
+	CU_add_test(pSuite, "Transfer Dword nibble command_test", testTransferDWordNibbleCommand);
+	CU_add_test(pSuite, "Transfer Dword index command_test", testTransferDWordIndexCommand);
+	CU_add_test(pSuite, "Transfer Dword command_test", testTransferDWordIndexCommand);
+	CU_add_test(pSuite, "Control command test", testControlCommand);
+*/
+	//CU_add_test(pSuite, "Transfer Block command_test", testTransferBlockCommand);
+
+	//CU_add_test(pSuite, "Transfer Extra command_test", testTransferExtraCommand);
+
+	//CU_add_test(pSuite, "Control command test", testControlCommand);
+
+	////CU_add_test(pSuite, "Runtime error bit command test", testRuntimeErrorSequence);
+	////CU_add_test(pSuite, "Runtime error word command test", testRuntimeErrorWD);
+	////CU_add_test(pSuite, "Runtime error dword command test", testRuntimeErrorDW);
+	////CU_add_test(pSuite, "Runtime error float command test", testRuntimeErrorFloat);
+	////CU_add_test(pSuite, "Runtime error block command test", testRuntimeErrorBlock);
+	////CU_add_test(pSuite, "Runtime error Extra command test", testRuntimeErrorExtra);
+
+
+	//CU_add_test(pSuite, "Arithmetic Block command_test", testBasicArithmeticBlockCommand);
+#endif
+	///////////////////
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+	CU_basic_run_tests();
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+	CU_cleanup_registry();
+	printf("[Fatal-Errored CMD List]\n[count] %4d\n", countFatalError);
+	int i;
+	for(i=0;i<countFatalError;i++){
+		printf("[%3d]%s\n", i, PLC_OPERATOR_DICTIONARY_findOperator(queueFatalError[i])->strName);
+	}
+	DBG_LOG("Test Successfully end!\n");
+	return CU_get_error();
+}
+
+void setTimerLD(){
+	TestCodeInit();
+	/*
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_X, 0);
+	addMLOperator(ML_CODE_OUT_T); addMLOperand(OPERAND_ML_CODE_T, 0);addMLOperand(OPERAND_ML_CODE_DK, 3000);
+	addMLOperator(ML_CODE_END);
+	*/
+
+	/*addMLOperator(ML_CODE_LDI); addMLOperand(OPERAND_ML_CODE_X, 100);
+	addMLOperator(ML_CODE_OUT); addMLOperand(OPERAND_ML_CODE_X, 100);
+	//addMLOperator(ML_CODE_CJ); addMLOperand(OPERAND_ML_CODE_K, 5);
+	addMLOperator(ML_CODE_FEND);
+	addMLOperator(ML_CODE_POINT); addMLOperand(OPERAND_ML_CODE_K, 5+1024);
+	addMLOperator(ML_CODE_IRET);
+	addMLOperator(ML_CODE_END);
+*/
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_X, 0);
+	addMLOperator(ML_CODE_OUT_T); addMLOperand(OPERAND_ML_CODE_T, 0);addMLOperand(OPERAND_ML_CODE_K, 2);
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_X, 0);
+	addMLOperator(ML_CODE_MC); addMLOperand(OPERAND_ML_CODE_K, 19);addMLOperand(OPERAND_ML_CODE_X, 100);
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_T, 0);
+	addMLOperator(ML_CODE_OUT_T); addMLOperand(OPERAND_ML_CODE_T, 1);addMLOperand(OPERAND_ML_CODE_K, 2);
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_T, 1);
+	addMLOperator(ML_CODE_OUT_T); addMLOperand(OPERAND_ML_CODE_T, 2);addMLOperand(OPERAND_ML_CODE_K, 2);
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_T, 2);
+	addMLOperator(ML_CODE_FROM);
+	addMLOperand(OPERAND_ML_CODE_K, 4);addMLOperand(OPERAND_ML_CODE_K, 5);
+	addMLOperand(OPERAND_ML_CODE_D, 0);addMLOperand(OPERAND_ML_CODE_K, 10);
+	addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_X, 0);
+	addMLOperator(ML_CODE_OUT); addMLOperand(OPERAND_ML_CODE_Y, 2);
+	addMLOperator(ML_CODE_MCR); addMLOperand(OPERAND_ML_CODE_K, 1);
+	addMLOperator(ML_CODE_END);
+
+}
+
+void setTimerInput(){
+	setTimerLD();
+	addDeviceControlInstruction(0, OPERAND_ML_CODE_X, 0, 1);
+	TestCodeTearDown();
+}
+//todo
+void setUserIL(uint8 taskIdx)
+{
+	uint32 crc = 0;
+	switch(taskIdx)
+	{
+		case 0:
+		{
+			/*
+			addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_X, 0);
+			addMLOperator(ML_CODE_OUT); addMLOperand(OPERAND_ML_CODE_Y, 0);
+			addMLOperator(ML_CODE_END);*/
+
+			reloadMLfile("/home/skson/out/TestMLs/out0.ml", taskIdx, crc, CONDITION_ALWAYS_EXEC);
+			return ;
+		}
+		case 1:
+		{
+			/*
+			addMLOperator(ML_CODE_LD); addMLOperand(OPERAND_ML_CODE_X, 1);
+			addMLOperator(ML_CODE_OUT); addMLOperand(OPERAND_ML_CODE_Y, 0);
+			addMLOperator(ML_CODE_END);*/
+			reloadMLfile("/home/skson/out/TestMLs/out1.ml", taskIdx, crc, CONDITION_ALWAYS_EXEC);
+			return ;
+		}
+		case 2:
+		{
+			/*addMLOperator(ML_CODE_LDI); addMLOperand(OPERAND_ML_CODE_X, 0);
+			addMLOperator(ML_CODE_OUT); addMLOperand(OPERAND_ML_CODE_Y, 1);
+			addMLOperator(ML_CODE_END);*/
+			reloadMLfile("/home/skson/out/TestMLs/out2.ml", taskIdx, crc, CONDITION_ALWAYS_EXEC);
+			return ;
+		}
+		case 3:
+		{
+			/*addMLOperator(ML_CODE_LDI); addMLOperand(OPERAND_ML_CODE_X, 1);
+			addMLOperator(ML_CODE_OUT); addMLOperand(OPERAND_ML_CODE_Y, 1);
+			addMLOperator(ML_CODE_END);*/
+			reloadMLfile("/home/skson/out/TestMLs/out3.ml", taskIdx, crc, CONDITION_ALWAYS_EXEC);
+			return ;
+		}
+		case 4:
+		{
+			reloadMLfile("/home/skson/out/TestMLs/out4.ml", taskIdx, crc, CONDITION_ALWAYS_EXEC);
+			return ;
+		}
+		case 5:
+		{
+			return ;
+		}
+		case 6:
+		{
+			return ;
+		}
+		case 7:
+		{
+			return ;
+		}
+		default:
+		{
+			return ;
+		}
+	}
+}
+//todo
+void setUserInput()
+{
+	addDeviceControlInstruction(0, OPERAND_ML_CODE_X, 0, 0);
+	addDeviceControlInstruction(0, OPERAND_ML_CODE_X, 1, 1);
+	//TestCodeTearDown();
+}
+
+void setTestILInput(uint8 taskIdx)
+{
+	setUserIL(taskIdx);
+	setUserInput();//addDeviceControlInstruction(0, OPERAND_ML_CODE_X, 1, 1);
+	//TestCodeTearDownByTaskIdx(taskIdx);
+}
+
+void timerTest(void)
+{
+	//init
+	//PLC_DEVICE_Init();
+
+		//run
+	runTestCode(-1, "Timer Test");
+
+	//result
+	uint8 rst = 0;
+	test_getBit( &rst, OPERAND_ML_CODE_Y, 0);
+	//DBG_LOGPRINT("out value = [%s%d] %d\n", opndic[OPERAND_ML_CODE_Y].strType, 0, rst);
+}
+
+
+#endif
+
+#endif

@@ -1,0 +1,133 @@
+/*
+ * PLC_InterruptionStack.c
+ *
+ *  Created on: 2015. 12. 24.
+ *      Author: skson
+ */
+
+#ifndef PLC_INTERRUPTIONSTACK_H_
+#include "PLC_EventHandler.h"
+#include "PLC_DeviceStack.h"
+#endif
+
+static PLC_EventHandler eventHandler;
+
+extern uint8 PLC_DeviceExecutor_execOneScanTime(uint8 taskIdx, uint32 currPos, EventFlag priority);
+extern uint8 PLC_DeviceExecutor_setCurrPoint(uint8 taskIdx, uint32 taskPos);
+/*
+ * static PLC_Device_Stack currTaskIdxStack;
+uint16 PLC_EventHandler_getCurrTaskIdx()
+{
+	return STACK_pick(&currTaskIdxStack);
+}
+
+uint16 PLC_EventHandler_pushTaskIdx(uint8 taskIdx)
+{
+	return STACK_push(&currTaskIdxStack, taskIdx);
+}
+
+uint16 PLC_EventHandler_pushTaskIdx(uint8 taskIdx)
+{
+	return STACK_pull(&currTaskIdxStack);
+}
+
+PLC_EventHandler* PLC_EventHandler_getInstance()
+{
+	return &eventHandler;
+}*/
+uint8 PLC_EventHandler_hasEvent()
+{
+	if (eventHandler.nEventStackSize>0)
+		return FALSE;
+	return (eventHandler.stackEvent[eventHandler.nEventStackSize-1]>PLC_DeviceExecutor_getCurrPriority());
+}
+int PLC_EventHandler_eventCount()
+{
+	return eventHandler.nEventStackSize;
+}
+void PLC_EventHandler_init(){
+	memset(&eventHandler, 0, sizeof(eventHandler));
+	//STACK_clear(&currTaskIdxStack);
+}
+uint8 PLC_EventHandler_mapEventFlagToGIP(EventFlag flag, uint32 GIP)
+{
+	if(flag >= PLC_INTERRUPTION_EVENT_FLAG_COUNT)
+		return FALSE;
+	eventHandler.mapEventGIP[flag] = GIP;
+	return TRUE;
+}
+
+/////
+uint8 PLC_EventHandler_pullEvent(EventFlag* dstFlag, uint32* dstGIP)
+{
+	EventFlag lastEventFlag;
+	if(eventHandler.nEventStackSize==0)
+		return FALSE;
+	eventHandler.nEventStackSize--;
+	lastEventFlag = eventHandler.stackEvent[eventHandler.nEventStackSize];
+	*dstGIP = eventHandler.mapEventGIP[lastEventFlag];
+	return TRUE;
+}
+uint8 PLC_EventHandler_pushCallbackPosition(uint8 taskIdx, uint32 taskPos)
+{
+	if(eventHandler.nCallbackSize>=PLC_INTERRUPTION_EVENT_STACK_SIZE)
+		return FALSE;
+	eventHandler.stackCallbackPoint[eventHandler.nCallbackSize].taskIdx = taskIdx;
+	eventHandler.stackCallbackPoint[eventHandler.nCallbackSize].nDevicePoint = taskPos;
+	eventHandler.nCallbackSize++;
+	return TRUE;
+}
+
+uint8 PLC_EventHanstmfrldler_callbackPosition(uint8 *taskIdx, uint32 *taskPos)
+{
+	if(eventHandler.nCallbackSize==0)
+		return FALSE;
+	eventHandler.nCallbackSize--;
+	*taskIdx = eventHandler.stackCallbackPoint[eventHandler.nCallbackSize].taskIdx;
+	*taskPos = eventHandler.stackCallbackPoint[eventHandler.nCallbackSize].nDevicePoint;
+
+	return PLC_DeviceExecutor_setCurrPoint(*taskIdx, *taskPos);
+}
+/////
+/*USER SIDE METHOD*/
+uint8 PLC_EventHandler_pushEvent(EventFlag flag)
+{
+	if(eventHandler.nEventStackSize>=PLC_INTERRUPTION_EVENT_STACK_SIZE)
+		return FALSE;
+	eventHandler.stackEvent[eventHandler.nEventStackSize] = flag;
+	eventHandler.nEventStackSize++;
+	return TRUE;
+}
+/*USER SIDE METHOD*/
+uint8 PLC_EventHandler_callEvent()
+{
+
+	uint32 dstGIP = 0;
+	//if(!PLC_EventHandler_pushCallbackPosition(*currTaskIdx, *currTaskPos))
+	//	return FALSE;
+	if(!PLC_EventHandler_pullEvent(&dstGIP))
+	{
+		DBG_LOGPRINT("[ERROR] G-Point[%d] cannot pull!\n", dstGIP);
+		return FALSE;
+	}
+	//DBG_LOGPRINT("[Event] G-Point[%d] called!\n", dstGIP);
+	uint8 interruptionTaskIdx = 0;
+	uint32 interruptionTaskPos= 0;
+
+	if(!PLC_PointTable_getGIPByLabel(&interruptionTaskIdx, &interruptionTaskPos, dstGIP))
+	{
+		DBG_LOGPRINT("[ERROR] G-Point[%d] : %d.%d cannot found from map!\n", dstGIP, interruptionTaskIdx, interruptionTaskPos);
+		return FALSE;
+	}
+
+	if(!PLC_DeviceExecutor_execOneScanTime(interruptionTaskIdx, interruptionTaskPos, ))
+	{
+		DBG_LOGPRINT("[ERROR] G-Point[%d] : %d.%d execution failed!\n", dstGIP, interruptionTaskIdx, interruptionTaskPos);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
+

@@ -1,0 +1,25 @@
+/*
+ * PLC_MasterController.h
+ *
+ *  Created on: 2016. 3. 11.
+ *      Author: skson
+ */
+
+#ifndef PLC_MASTERCONTROLLER_H_
+#define PLC_MASTERCONTROLLER_H_
+
+#include "PLC_Definitions.h"
+typedef struct {
+	uint8 bIsload;
+	uint8 operand[3];
+}MC_Unit;
+
+
+typedef struct {
+	MC_Unit arrMCTable[15];
+}MC_Table;
+
+uint8 PLC_MasterController_setFlag(uint8 mcFlag, uint8 operand[]);
+uint8 PLC_MasterController_getAndRemoveFlag(uint8* devType, uint16* devAddr, uint8 mcFlag);
+
+#endif /* PLC_MASTERCONTROLLER_H_ */

@@ -1,0 +1,16 @@
+/*
+ * test_baseFunctions.h
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#define TEST_BASEFUNCTIONS_H_
+
+int TestBaseFunction_setOperatorInput(uint16 operatorMLCode);
+
+
+
+
+#endif /* TEST_BASEFUNCTIONS_H_ */

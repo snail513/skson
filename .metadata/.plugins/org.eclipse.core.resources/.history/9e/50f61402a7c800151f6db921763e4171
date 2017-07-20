@@ -1,0 +1,149 @@
+/*
+ * PLC_Register.h
+ *
+ *  Created on: 2015. 2. 12.
+ *      Author: skson
+ */
+
+#ifndef PLC_REGISTER_H_
+#define PLC_REGISTER_H_
+#include "PLC_Definitions.h"
+#include "PLC_OperandDictionary.h"
+#include <time.h>
+#define TYPE_BIT 1
+#define TYPE_WORD 2
+#define TYPE_DWORD 3
+#define TYPE_BLOCK 4
+#define TYPE_LONG 5
+#define TYPE_FLOAT 6
+#define TYPE_DOUBLE 7
+#define TYPE_STRING 8
+#define TYPE_NIBBLE 9
+#define TYPE_WORDBIT 10
+#define INITIAL_LOG_SIZE 300
+
+#define TIMER_MODE_NORMAL 0
+#define TIMER_MODE_HIGH 1
+#define TIMER_MODE_STORE 2
+#define TIMER_MODE_HIGH_STORE 3
+
+#define PLC_STRING_MAX_LENGTH 16383
+
+enum ErrorCode{
+	ERROR_CODE_OUT_OF_DEVICE_RANGE = 4101,
+	ERROR_CODE_OUT_OF_VALUE_RANGE = 4140,
+	ERROR_CODE_INVALID_VALUE = 4100,
+
+
+};
+
+
+typedef struct{
+	uint16* registerHead;
+	PLC_Operand* RefOperand;
+	uint16 latchHead;
+	uint16 latchSize;
+	uint8 hasLatch;
+}TypedRegister;
+
+
+
+
+typedef struct{
+	//uint16* U;
+	//uint16* U_past;
+
+	TypedRegister listRegister[OPERAND_ML_CODE_MAX];
+	TypedRegister listRegister_old[OPERAND_ML_CODE_MAX];
+	uint8 C_ret[OPERAND_SIZE_C];
+	uint8 C_ret_old[OPERAND_SIZE_C];
+	uint8 C_isOn[OPERAND_SIZE_C];
+	uint16 C_curr[OPERAND_SIZE_C];
+
+	uint8 T_ret[OPERAND_SIZE_T];
+	uint8 T_ret_old[OPERAND_SIZE_T];
+	uint8 T_isOn[OPERAND_SIZE_T];
+	uint8 T_mode[OPERAND_SIZE_T];
+	unsigned long long T_curr[OPERAND_SIZE_T];
+	unsigned long long T_remained[OPERAND_SIZE_T];
+	unsigned long long T_set[OPERAND_SIZE_T];
+
+}PLC_Register;
+
+uint8 PLC_Register_setAsLatch(uint8 regTypeAsMLOperand, uint32 latchStart, uint32 latchLast);
+uint8 PLC_Register_setAsNonlatch(uint8 regTypeAsMLOperand);
+uint8 int PLC_Register_getLatchSize(uint8 regTypeAsMLOperand);
+uint8 PLC_Register_setLatch(uint8 operandML, uint16 latchHead, uint16 latchSize);
+PLC_Register* PLC_Register_getRegister();
+void PLC_Register_init();
+
+void PLC_Register_reset();
+void PLC_Register_print();
+uint8 PLC_Register_set(uint8 ML_code, uint16 ML_Addr, uint8 ML_bit_Addr, uint8* setValue, uint8 setType);
+uint8 PLC_Register_setNibble(uint8 ML_code, uint16 ML_Addr, long long setValue, uint8 nibbleCount);
+uint8 PLC_Register_setCount(uint16 countIdx, uint8 countValue);
+uint8 PLC_Register_setTimer(uint16 timerIdx, uint8 timerMode, uint8 timerValue);
+uint8 PLC_Register_setF(uint16 ML_ADDR_F);
+uint8 PLC_Register_resetF(uint16 ML_ADDR_F);
+void PLC_Register_saveFast();
+
+uint32 PLC_Register_isPulse(uint8 ML_code, uint16 ML_Addr, uint8 bitPosition);
+
+uint8 PLC_Register_getBit(uint8 ML_code, uint16 ML_Addr);
+uint8 PLC_Register_getWordBit(uint8 ML_code, uint16 ML_Addr, uint8 bitAddr);
+uint32 PLC_Register_getNibble(uint8 ML_code, uint16 ML_Addr, uint8 wordBit);
+uint32 PLC_Register_getWord(uint8 ML_code, uint16 ML_Addr);
+uint32 PLC_Register_getDWord(uint8 ML_code, uint16 ML_Addr);
+float PLC_Register_getFloat(uint8 ML_code, uint16 ML_Addr);
+double PLC_Register_getDouble(uint8 ML_code, uint16 ML_Addr);
+
+//uint8 test_setValue(long long value, uint8 inst[], uint16 offset);
+uint8 test_getBit(uint8* tar, uint8 ML_code, uint16 ML_Addr);
+uint8 test_getWordBit(uint8* tar, uint8 ML_code, uint16 ML_Addr, uint8 bitAddr);
+uint8 test_getNibble(long long* tar, uint8 ML_code, uint16 ML_Addr, uint8 nibbleCount);
+uint8 test_getWord(uint16* tar, uint8 ML_code, uint16 ML_Addr);
+uint8 test_getDWord(uint32* tar, uint8 ML_code, uint16 ML_Addr);
+uint8 test_getFloat(float* tar, uint8 ML_code, uint16 ML_Addr);
+uint8 test_getDouble(double* tar, uint8 ML_code, uint16 ML_Addr);
+uint8 test_getLong(long long* tar, uint8 ML_code, uint16 ML_Addr);
+uint8 test_getValue(long long *tar, uint8* rstBitSize, uint8 inst[], short offset);
+uint8 test_getDValue(int *tar, uint8* rstBitSize, uint8 inst[], uint16 offset);
+
+uint8 PLC_Register_getBit_old(uint8 ML_code, uint16 ML_Addr);
+uint32 PLC_Register_getWord_old(uint8 ML_code, uint16 ML_Addr);
+uint32 PLC_Register_getDWord_old(uint8 ML_code, uint16 ML_Addr);
+uint8 PLC_Register_getWordBit_old(uint8 ML_code, uint16 ML_Addr, uint8 bitAddr);
+uint8 PLC_Register_getNibble_old(uint8 ML_code, uint16 ML_Addr, uint8 wordBit);
+
+void* PLC_Register_getPos_old(uint8 ML_code, uint16 ML_Addr, uint8 getType);
+void* PLC_Register_getPos(uint8 ML_code, uint16 ML_Addr, uint8 getType);
+uint8* PLC_Register_getNibbleBlock(uint8 ML_code, uint16 ML_Addr, uint16 blockCount);
+uint8* PLC_Register_getString(uint8 ML_code, uint16* ML_Addr);
+uint16* PLC_Register_getBlock(uint8 ML_code, uint16 ML_Addr);
+
+
+
+#define VALUE_TYPE_SET 0
+#define VALUE_TYPE_CURR 1
+#define VALUE_TYPE_RET 2
+#define VALUE_TYPE_ISON 3
+#define VALUE_TYPE_MODE 4
+#define VALUE_TYPE_SET_OLD 5
+#define VALUE_TYPE_REMAINED 6
+uint16 PLC_Register_getCount(uint16 idx, uint8 valueType);
+unsigned long long PLC_Register_getTimer(uint16 idx, uint8 valueType);
+uint16 PLC_Register_setTValue(uint16 idx, uint8 valueType, unsigned long long value);
+uint16 PLC_Register_setCValue(uint16 idx, uint8 valueType, uint16 value);
+uint8 PLC_Register_rstTValue(uint16 idx);
+uint8 PLC_Register_rstCValue(uint16 idx);
+uint8 PLC_Register_increaseCount(uint16 idx, uint16 setValue);
+
+void TEST_PLC_Register();
+
+void PLC_DEVICE_saveChangedRegisterLog(uint32 scantime);
+void PLC_DEVICE_printChangedRegisterLog();
+void PLC_DEVICE_clearChangedRegisterLog();
+void PLC_Register_printDev(uint8 devMLCode, uint16 devIdx);
+uint16 getOperandStrLength(uint8 inst[],uint32* pos);
+void handleExecError(int errorCode);
+#endif /* PLC_REGISTER_H_ */

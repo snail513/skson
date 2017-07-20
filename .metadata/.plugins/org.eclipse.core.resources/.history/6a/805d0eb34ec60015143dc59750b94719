@@ -1,0 +1,13 @@
+/*
+ * PLC_RealDevice.c
+ *
+ *  Created on: 2016. 1. 29.
+ *      Author: skson
+ */
+
+uint8 PLC_RealDevice_getRealDevicePointer()
+{
+	//todo:: get real device to set [uint8* PLC_RealDevice].
+	//PLC_RealDevice =
+	return TRUE;
+}

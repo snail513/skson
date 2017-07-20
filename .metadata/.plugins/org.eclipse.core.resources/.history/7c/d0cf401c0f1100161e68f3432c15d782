@@ -1,0 +1,23 @@
+/*
+ * test_baseFunctions.h
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#define TEST_BASEFUNCTIONS_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <CUnit/CUnit.h>
+#include <CUnit/Basic.h>
+#include "../PLC_ListOfTestSuite.h"
+
+uint8 generalTest( uint16 operatorMLCode, uint)
+{
+
+}
+
+#endif /* TEST_BASEFUNCTIONS_H_ */

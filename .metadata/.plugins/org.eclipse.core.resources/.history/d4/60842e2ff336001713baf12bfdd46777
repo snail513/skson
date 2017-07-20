@@ -1,0 +1,28 @@
+/*
+ * JudgeModel.h
+ *
+ *  Created on: 2017. 5. 12.
+ *      Author: skson
+ */
+
+#ifndef JUDGEMODEL_H_
+#define JUDGEMODEL_H_
+
+#include "Definitions.h"
+
+static uint16 arrCurrData[DATA_SIZE][AXIS_SIZE];
+static uint16 arrCurrFFTData[FFT_SIZE][AXIS_SIZE];
+static uint16 arrMaxBoundary[FFT_SIZE][AXIS_SIZE];
+static uint16 arrMinBoundary[FFT_SIZE][AXIS_SIZE];
+static uint32 arrModelSum[FFT_SIZE][AXIS_SIZE];
+static uint32 nDataCount;
+
+void JudgeModel_reset();
+void JudgeModel_addData(uint16 data[DATA_SIZE][AXIS_SIZE]);
+void JudgeModel_buildJudgeModel();
+void JudgeModel_buildFFTData();
+void JudgeModel_getCurrFFT(int axis);
+
+
+
+#endif /* JUDGEMODEL_H_ */

@@ -1,0 +1,24 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+uint8 setDestinationOperand()
+{
+
+}
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

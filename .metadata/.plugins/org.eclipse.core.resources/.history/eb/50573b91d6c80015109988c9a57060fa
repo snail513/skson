@@ -1,0 +1,130 @@
+/*
+ * PLC_Device.h
+ *
+ *  Created on: 2014. 10. 27.
+ *      Author: skson
+ */
+
+#ifndef PLC_DEVICE_H_
+#define PLC_DEVICE_H_
+#include "PLC_Definitions.h"
+#include "PLC_DeviceStack.h"
+#include "PLC_InterruptionModule.h"
+#include "PLC_IL_Task.h"
+#include "PLC_Log.h"
+#include "PLC_Register.h"
+
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define PLC_DEVICE_FALSE_32 PLC_FALSE_32
+#define PLC_DEVICE_BINARY_CURRVAL_STACK_SIZE 32
+#define C_POINT 512
+#define T_POINT C_POINT+OPERAND_SIZE_C
+
+#define BLOCK_COPY_TYPE_BMOV 1
+#define BLOCK_COPY_TYPE_FMOV 0
+
+
+typedef struct{
+	uint32 nTime;
+	uint8 pInputPosition[6];
+	uint32 nInputValue;
+}PLC_DEVICE_ControlInstruction;
+
+#define MAX_CONTROL_COUNT 100
+typedef struct{
+	PLC_DEVICE_ControlInstruction controlInstruction[MAX_CONTROL_COUNT];
+	uint16 nCountInstruction;
+	uint16 nCountScanTimeLimit;
+}PLC_DEVICE_Controller;
+
+typedef struct
+{
+	/*PLC_Device_Stack device_stack;*/
+	PLC_Device_Stack device_pulse_stack;
+	PLC_Device_Stack device_delta_stack;
+	PLC_Device_Stack device_block_stack;
+	PLC_Device_Stack device_mc_stack;
+	unsigned char nCurrPulseStackPosision;
+	unsigned char nCurrDeltaStackPosision;
+	unsigned char nStep[PLC_DEFINITION_MAX_STEP];
+	unsigned char currStepIdx;
+
+	//unsigned char nR12LoadingCount;//PLS loading count
+	//unsigned char nR10LoadingCount;//branch value count
+
+	//unsigned char internalInstructions[INSTRUCTION_MEMORY_SIZE] ;
+	unsigned int nCurrTimeScan;
+	unsigned int nExecTime;
+
+	unsigned char isMCOn[MC_SIZE];
+
+}PLC_Device;
+
+PLC_Device dev;
+PLC_DEVICE_Controller controllerInstruction;
+
+void PLC_DEVICE_Init();
+void PLC_DEVICE_initExceptRegAndPointTable();
+uint32 PLC_DEVICE_getCurrTimeScan();
+
+//Unimplemented!
+
+uint8 PLC_DEVICE_loadToOut(uint8 value, uint8 idx);
+uint8 PLC_DEVICE_loadToIn(uint8 idx);
+//end Unimplemented!
+
+
+uint8 PLC_DEVICE_setCountValue(uint8 C_idx, uint8 C_value);
+uint8 PLC_DEVICE_setTimerValue(uint8 T_idx, uint8 timerMode, uint8 T_value);
+//old get functions for erase
+uint32 PLC_DEVICE_getDeviceValue(uint8 operand[]);
+
+uint32 PLC_DEVICE_getPastDeviceValue(uint8 operand[]);
+
+uint32 PLC_DEVICE_getDeviceWordValue(uint8 operand[]);
+
+uint32 PLC_DEVICE_getDeviceNibbleValue(uint8 operand[]);
+
+uint32 PLC_DEVICE_getDeviceDoubleWordValue(uint8 operand[]);
+
+float PLC_DEVICE_getDeviceFloatValue(uint8 operand[]);//todo
+
+double PLC_DEVICE_getDeviceDoubleValue(uint8 operand[]);//todo
+
+uint16* PLC_DEVICE_getDeviceString(uint8 operand[]);
+
+uint16 PLC_DEVIDE_getValueBySize(uint8 operand[], uint8 bitSize);
+
+uint8 PLC_DEVICE_setDeviceValue(uint8 operand[], uint32 in, short offset);
+
+uint8 PLC_DEVICE_setDeviceDoubleWordValue(uint8 operand[], uint32 in);
+
+uint8 PLC_DEVICE_setDeviceValueBySize(uint8 operand[], long long in, uint8 in_Bitsize);
+
+uint8 PLC_DEVICE_setDeviceWordBit(uint8 operand[], short byteOffset, short bitOffset, uint8 setValue);
+
+uint8 PLC_DEVICE_setDeviceBLKs(uint8 operand[], uint32 in, uint16 length, uint8 byteSize);
+
+uint8 PLC_DEVICE_copyDeviceBLKs(uint8* operand, uint8* in, uint16 length);
+
+uint8 PLC_DEVICE_copyDeviceBLK_new(uint8 dstOpnd[], uint8 srcOpnd[], uint16 blockCount, uint8 blockWordSize, uint8 copyType);
+
+uint8 PLC_DEVICE_getStepValue();
+
+uint8 PLC_DEVICE_setStepValue(uint8 stepValue);
+
+uint8 PLC_DEVICE_increaseStep();
+
+uint8 PLC_DEVICE_saveBlockResult(uint8 in);
+
+uint8 PLC_DEVICE_overWirteBlockResult(uint8 in);
+
+uint16 PLC_DEVICE_pickBlockResult();
+
+uint16 PLC_DEVICE_pullBlockResult();
+
+uint32 checkErrorFromOperand(PLC_Operand* opnd, uint16 val);
+#endif /* PLC_DEVICE_H_ */

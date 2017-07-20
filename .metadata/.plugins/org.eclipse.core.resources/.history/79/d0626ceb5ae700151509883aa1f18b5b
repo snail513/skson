@@ -1,0 +1,24 @@
+/*
+ * PLC_MasterController.h
+ *
+ *  Created on: 2016. 3. 11.
+ *      Author: skson
+ */
+
+#ifndef PLC_MASTERCONTROLLER_H_
+#define PLC_MASTERCONTROLLER_H_
+
+#include "PLC_Definitions.h"
+typedef struct {
+	uint8 bIsload;
+	uint8 nDevType;
+	uint16 nDevAddr;
+}MC_Unit;
+
+
+typedef struct {
+	uint8 loadCount;
+	MC_Unit arrMCTable[15];
+}MC_Table;
+
+#endif /* PLC_MASTERCONTROLLER_H_ */

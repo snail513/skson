@@ -1,0 +1,25 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+uint8 N = 4;
+uint16 source16 = 0x10;
+uint16 source16Block = {0x10, 0x20, 0x30, 0x40};
+uint16 source32 = 0x00100000;
+uint16 source32Block = {0x00100000, 0x00200000, 0x00300000, 0x00400000};
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

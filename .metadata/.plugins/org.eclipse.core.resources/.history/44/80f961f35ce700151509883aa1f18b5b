@@ -1,0 +1,13 @@
+/*
+ * PLC_MasterController.c
+ *
+ *  Created on: 2016. 3. 11.
+ *      Author: skson
+ */
+
+#ifndef PLC_MASTERCONTROLLER_H_
+#include "PLC_MasterController.h"
+
+
+
+#endif

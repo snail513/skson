@@ -1,0 +1,13 @@
+/*
+ * PLC_RealDevice.h
+ *
+ *  Created on: 2016. 1. 29.
+ *      Author: skson
+ */
+
+#ifndef PLC_REALDEVICE_H_
+#define PLC_REALDEVICE_H_
+
+
+
+#endif /* PLC_REALDEVICE_H_ */

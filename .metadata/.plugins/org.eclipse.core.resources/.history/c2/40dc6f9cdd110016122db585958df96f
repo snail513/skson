@@ -1,0 +1,82 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+typedef enum
+{
+	none = 0,
+	srcbit,
+	srcWord,
+	srcDWord,
+	srcFloat,
+	srcDouble,
+	srcStr,
+	dstbit,
+	dstWord,
+	dstDWord,
+	dstFloat,
+	dstDouble,
+	dstStr,
+	cnt
+}TestType;
+
+static uint8 srcBitOperand[] = {0,1,2,3,4,5,6};
+static uint8 srcWordOperand[] = {7,8,9,10,11,14};
+static uint8 srcDwordOperand[] = {7,8,9,10,11,21};
+static uint8 srcFloatOperand[] = {7,8,9,10,11,16};
+static uint8 srcDoubleOperand[] = {7,8,9,10,11,17};
+static uint8 srcStrOperand[] = {7,8,9,10,11,18};
+static uint8 dstBitOperand[] = {0,1,2,3,4,5,6};
+static uint8 dstOperand[] = {7,8};
+
+static char* examplebit[] = {0, 1};
+static char* exampleString[] = {"0", "-1234", "1234567890", "-1234556789"};
+static char* exampleHString[] = {"1A29", "-ABC9", "F23456789A", "AABB113340"};
+static short exampleShort[] = {0x0000, 0xFFFF, 0x1234, 0xABCD};
+static int exampleInt[] = {0x0000, 0xFFFFFFFF, 0x12345678, 0xABCDEF01};
+static float exampleFloat[] = {0.0f, 0.1f, -123,456.f, 121400.f};
+static double exampleDouble[] = {0.0f, 0.1f, -123,456.f, 121400.f};
+
+typedef struct
+{
+	PLC_Operator* operator;
+	TestType operands[5];
+	uint8 operandMLs[5];
+}OperandStruct;
+
+static OperandStruct currStruct;
+
+uint8 setOperandStruct(uint16 operatorML, TestType t[])
+{
+	currStruct.operator = PLC_OPERATOR_DICTIONARY_findOperator(operatorML);
+	memcpy(currStruct.operands, t, sizeof*(TestType)*currStruct.operator->nOperandPosCount);
+	return TRUE;
+}
+
+uint8 setOperand(TestType type, int exampleNumber)
+{
+	switch(type)
+	{
+		case srcbit:
+		{
+			addMLOperand(srcBitOperand[exampleNumber]);
+			return TRUE;
+		}
+	}
+}
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+
+

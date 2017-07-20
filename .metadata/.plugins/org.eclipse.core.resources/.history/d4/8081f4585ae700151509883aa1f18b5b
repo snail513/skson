@@ -1,0 +1,23 @@
+/*
+ * PLC_MasterController.h
+ *
+ *  Created on: 2016. 3. 11.
+ *      Author: skson
+ */
+
+#ifndef PLC_MASTERCONTROLLER_H_
+#define PLC_MASTERCONTROLLER_H_
+
+#include "PLC_Definitions.h"
+
+typedef struct {
+	uint8 type;
+	uint16 address;
+}MC_pair;
+
+typedef struct {
+
+
+}MC_State;
+
+#endif /* PLC_MASTERCONTROLLER_H_ */

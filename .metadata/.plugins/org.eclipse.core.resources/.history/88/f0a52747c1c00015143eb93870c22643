@@ -1,0 +1,28 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+O_SRCS += \
+../PLC_NEW_Simulator/Release/src/PLC_Device.o \
+../PLC_NEW_Simulator/Release/src/PLC_DeviceExecutor.o \
+../PLC_NEW_Simulator/Release/src/PLC_DeviceStack.o \
+../PLC_NEW_Simulator/Release/src/PLC_ExecFunctions.o \
+../PLC_NEW_Simulator/Release/src/PLC_IL_Task.o \
+../PLC_NEW_Simulator/Release/src/PLC_InterruptionModule.o \
+../PLC_NEW_Simulator/Release/src/PLC_ListOfTestSuite.o \
+../PLC_NEW_Simulator/Release/src/PLC_Log.o \
+../PLC_NEW_Simulator/Release/src/PLC_NEW_Simulator.o \
+../PLC_NEW_Simulator/Release/src/PLC_Operand.o \
+../PLC_NEW_Simulator/Release/src/PLC_OperandDictionary.o \
+../PLC_NEW_Simulator/Release/src/PLC_Operator.o \
+../PLC_NEW_Simulator/Release/src/PLC_OperatorDictionary.o \
+../PLC_NEW_Simulator/Release/src/PLC_Point.o \
+../PLC_NEW_Simulator/Release/src/PLC_PointTable.o \
+../PLC_NEW_Simulator/Release/src/PLC_PreExecFunctions.o \
+../PLC_NEW_Simulator/Release/src/PLC_Register.o \
+../PLC_NEW_Simulator/Release/src/PLC_Register_Log.o 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+

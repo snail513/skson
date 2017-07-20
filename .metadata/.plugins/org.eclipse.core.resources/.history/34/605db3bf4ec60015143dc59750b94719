@@ -1,0 +1,16 @@
+/*
+ * PLC_RealDevice.c
+ *
+ *  Created on: 2016. 1. 29.
+ *      Author: skson
+ */
+#ifndef PLC_REALDEVICE_H_
+#include "PLC_Definitions.h";
+#endif
+
+uint8 PLC_RealDevice_getRealDevicePointer()
+{
+	//todo:: get real device to set [uint8* PLC_RealDevice].
+	//PLC_RealDevice =
+	return TRUE;
+}

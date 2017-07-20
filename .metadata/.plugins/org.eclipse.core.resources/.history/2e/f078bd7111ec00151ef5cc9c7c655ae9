@@ -1,0 +1,18 @@
+/*
+ * PLC_MasterController.h
+ *
+ *  Created on: 2016. 3. 11.
+ *      Author: skson
+ */
+
+#ifndef PLC_MASTERCONTROLLER_H_
+#define PLC_MASTERCONTROLLER_H_
+
+#include "PLC_Definitions.h"
+#include "PLC_DeviceStack.h"
+#define SIZE_MC_TABLE 15
+
+uint8 PLC_MasterController_setFlag(PLC_Device_Stack* stack, uint8 mcFlag);
+uint8 PLC_MasterController_getAndRemoveFlag(PLC_Device_Stack* stack);
+void PLC_MasterController_init(PLC_Device_Stack* stack);
+#endif /* PLC_MASTERCONTROLLER_H_ */

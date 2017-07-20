@@ -1,0 +1,15 @@
+/*
+ * PLC_RealDevice.h
+ *
+ *  Created on: 2016. 1. 29.
+ *      Author: skson
+ */
+
+#ifndef PLC_REALDEVICE_H_
+#define PLC_REALDEVICE_H_
+#include "PLC_Definitions.h";
+
+#define REAL_DEV_SIZE 1024*1024*128
+static uint8 PLC_RealDevice[REAL_DEV_SIZE];
+
+#endif /* PLC_REALDEVICE_H_ */

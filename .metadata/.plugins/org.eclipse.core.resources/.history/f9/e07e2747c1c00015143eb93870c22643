@@ -1,0 +1,69 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+O_SRCS += \
+../PLC_NEW_Simulator/Release/src/test/test_Op1_template.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_blk.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_dword.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_dword_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_dword_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_dword_mul.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_dword_mul_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_dword_mul_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_float.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_float_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_mul_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_mul_div.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_mul_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_arithmetic_str.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_comapre_dword_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_double.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_double_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_dword.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_dword_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_dword_blk.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_float.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_float_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_str.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_word.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_word_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_word_blk.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_compare_word_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_control.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_dword.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_dword_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_dword_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_extra.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_float.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_float_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_word_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_conversion_word_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_blk.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_dword.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_dword_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_dword_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_extra.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_word_NB.o \
+../PLC_NEW_Simulator/Release/src/test/test_basic_transfer_word_index.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_bit.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_blk.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_dword.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_extra.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_float.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_str.o \
+../PLC_NEW_Simulator/Release/src/test/test_runtime_error_word.o \
+../PLC_NEW_Simulator/Release/src/test/test_sequence_cmd.o \
+../PLC_NEW_Simulator/Release/src/test/test_sequence_extra.o \
+../PLC_NEW_Simulator/Release/src/test/test_sequence_wb2wb.o \
+../PLC_NEW_Simulator/Release/src/test/test_sequence_wordbit.o 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+

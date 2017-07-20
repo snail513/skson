@@ -1,0 +1,15 @@
+/*
+ * test_baseFunctions.c
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#include "test_baseFunctions.h"
+#endif
+
+uint8 generalTest( uint16 operatorMLCode , uint8 isPulseTest)
+{
+
+}

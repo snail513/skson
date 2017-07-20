@@ -1,0 +1,35 @@
+/*
+ * PLC_RealDevice.c
+ *
+ *  Created on: 2016. 1. 29.
+ *      Author: skson
+ */
+#ifndef PLC_REALDEVICE_H_
+#include "PLC_RealDevice.h"
+#include "PLC_OperandDictionary.h"
+#endif
+static uint8 realDevice[REAL_DEV_SIZE];
+
+static uint8 realDeviceTarget[REAL_DEV_SIZE];//block this code!
+//static uint8* realDeviceTarget = NULL;//block this code!
+
+uint8* PLC_RealDevice_getRealDevice()
+{
+	return realDevice;
+}
+uint8 PLC_RealDevice_getRealDevicePointer()
+{
+	//todo:: get real device to set [uint8* PLC_RealDevice].
+	//realDevice = get-method.
+	//if getting is failed, return FALSE.
+	return TRUE;
+}
+void PLC_RealDevice_setRealDevicePoint(uint8* target)
+{
+	//realDeviceTarget = target;//todo: Set your target device!
+}
+
+uint8* PLC_RealDevice_getRealDevicePoint()
+{
+	return realDeviceTarget;
+}

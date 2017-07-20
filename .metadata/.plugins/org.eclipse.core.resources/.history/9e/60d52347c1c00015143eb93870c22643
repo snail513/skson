@@ -1,0 +1,84 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+C_SRCS += \
+../PLC_NEW_Simulator/src/PLC_Device.c \
+../PLC_NEW_Simulator/src/PLC_DeviceExecutor.c \
+../PLC_NEW_Simulator/src/PLC_DeviceStack.c \
+../PLC_NEW_Simulator/src/PLC_EventHandler.c \
+../PLC_NEW_Simulator/src/PLC_ExecFunctions.c \
+../PLC_NEW_Simulator/src/PLC_IL_Task.c \
+../PLC_NEW_Simulator/src/PLC_InterruptionModule.c \
+../PLC_NEW_Simulator/src/PLC_ListOfTestSuite.c \
+../PLC_NEW_Simulator/src/PLC_Log.c \
+../PLC_NEW_Simulator/src/PLC_NEW_Simulator.c \
+../PLC_NEW_Simulator/src/PLC_Operand.c \
+../PLC_NEW_Simulator/src/PLC_OperandDictionary.c \
+../PLC_NEW_Simulator/src/PLC_Operator.c \
+../PLC_NEW_Simulator/src/PLC_OperatorDictionary.c \
+../PLC_NEW_Simulator/src/PLC_Point.c \
+../PLC_NEW_Simulator/src/PLC_PointTable.c \
+../PLC_NEW_Simulator/src/PLC_PreExecFunctions.c \
+../PLC_NEW_Simulator/src/PLC_Register.c \
+../PLC_NEW_Simulator/src/PLC_Register_Log.c \
+../PLC_NEW_Simulator/src/PLC_Step.c \
+../PLC_NEW_Simulator/src/PLC_TimeScanManager.c 
+
+OBJS += \
+./PLC_NEW_Simulator/src/PLC_Device.o \
+./PLC_NEW_Simulator/src/PLC_DeviceExecutor.o \
+./PLC_NEW_Simulator/src/PLC_DeviceStack.o \
+./PLC_NEW_Simulator/src/PLC_EventHandler.o \
+./PLC_NEW_Simulator/src/PLC_ExecFunctions.o \
+./PLC_NEW_Simulator/src/PLC_IL_Task.o \
+./PLC_NEW_Simulator/src/PLC_InterruptionModule.o \
+./PLC_NEW_Simulator/src/PLC_ListOfTestSuite.o \
+./PLC_NEW_Simulator/src/PLC_Log.o \
+./PLC_NEW_Simulator/src/PLC_NEW_Simulator.o \
+./PLC_NEW_Simulator/src/PLC_Operand.o \
+./PLC_NEW_Simulator/src/PLC_OperandDictionary.o \
+./PLC_NEW_Simulator/src/PLC_Operator.o \
+./PLC_NEW_Simulator/src/PLC_OperatorDictionary.o \
+./PLC_NEW_Simulator/src/PLC_Point.o \
+./PLC_NEW_Simulator/src/PLC_PointTable.o \
+./PLC_NEW_Simulator/src/PLC_PreExecFunctions.o \
+./PLC_NEW_Simulator/src/PLC_Register.o \
+./PLC_NEW_Simulator/src/PLC_Register_Log.o \
+./PLC_NEW_Simulator/src/PLC_Step.o \
+./PLC_NEW_Simulator/src/PLC_TimeScanManager.o 
+
+C_DEPS += \
+./PLC_NEW_Simulator/src/PLC_Device.d \
+./PLC_NEW_Simulator/src/PLC_DeviceExecutor.d \
+./PLC_NEW_Simulator/src/PLC_DeviceStack.d \
+./PLC_NEW_Simulator/src/PLC_EventHandler.d \
+./PLC_NEW_Simulator/src/PLC_ExecFunctions.d \
+./PLC_NEW_Simulator/src/PLC_IL_Task.d \
+./PLC_NEW_Simulator/src/PLC_InterruptionModule.d \
+./PLC_NEW_Simulator/src/PLC_ListOfTestSuite.d \
+./PLC_NEW_Simulator/src/PLC_Log.d \
+./PLC_NEW_Simulator/src/PLC_NEW_Simulator.d \
+./PLC_NEW_Simulator/src/PLC_Operand.d \
+./PLC_NEW_Simulator/src/PLC_OperandDictionary.d \
+./PLC_NEW_Simulator/src/PLC_Operator.d \
+./PLC_NEW_Simulator/src/PLC_OperatorDictionary.d \
+./PLC_NEW_Simulator/src/PLC_Point.d \
+./PLC_NEW_Simulator/src/PLC_PointTable.d \
+./PLC_NEW_Simulator/src/PLC_PreExecFunctions.d \
+./PLC_NEW_Simulator/src/PLC_Register.d \
+./PLC_NEW_Simulator/src/PLC_Register_Log.d \
+./PLC_NEW_Simulator/src/PLC_Step.d \
+./PLC_NEW_Simulator/src/PLC_TimeScanManager.d 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+PLC_NEW_Simulator/src/%.o: ../PLC_NEW_Simulator/src/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C Compiler'
+	gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+

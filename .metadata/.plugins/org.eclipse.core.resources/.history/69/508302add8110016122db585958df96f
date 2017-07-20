@@ -1,0 +1,51 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+typedef enum
+{
+	none = 0,
+	srcbit,
+	srcWord,
+	srcDWord,
+	srcFloat,
+	srcDouble,
+	dstbit,
+	dstWord,
+	dstDWord,
+	dstFloat,
+	dstDouble,
+	cnt
+}TestType;
+
+typedef struct
+{
+	PLC_Operator* operator;
+	TestType operands[5];
+}OperandStruct;
+
+static OperandStruct currStruct;
+
+uint8 setOperandStruct(uint16 operatorML, TestType t[])
+{
+	currStruct.operator = PLC_OPERATOR_DICTIONARY_findOperator(operatorML);
+	memcpy(currStruct.operands, t, sizeof*(TestType)*operandCount);
+	return TRUE;
+}
+
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

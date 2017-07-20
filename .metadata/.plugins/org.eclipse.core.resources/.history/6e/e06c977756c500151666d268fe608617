@@ -1,0 +1,73 @@
+/*
+ * PLC_DeviceExecutor.h
+ *
+ *  Created on: 2015. 2. 13.
+ *      Author: skson
+ */
+
+#ifndef PLC_DEVICEEXECUTOR_H_
+#define PLC_DEVICEEXECUTOR_H_
+#include "PLC_Definitions.h"
+#include "PLC_Device.h"
+#include "PLC_Point.h"
+
+typedef struct {
+	/*int currMemorySize = 0;
+	uint8 currMasterControl = FALSE;
+	uint8 currIsMasterControlOn = FALSE;
+	uint16 currOperator = 0;
+	uint8 currTaskIdx = 0;
+	uint32 currTaskPos = 0;
+	EventFlag currTaskPriority = EVENT_NONE;*/
+	int currMemorySize ;
+	uint8 currMasterControl ;
+	uint8 currIsMasterControlOn ;
+	uint16 currOperator ;
+	uint8 currTaskIdx ;
+	uint32 currTaskPos ;
+	EventFlag currTaskPriority ;
+}PLC_TaskExecutionStatus;
+PLC_TaskExecutionStatus PLC_DeviceExecutor_copyStatus();
+EventFlag PLC_DeviceExecutor_getCurrPriority();
+uint8 PLC_DeviceExecutor_getCurrTaskIdx();
+uint16 PLC_DeviceExecutor_getCurrOperator();
+void setMemSize(int setMemSize);
+int getMemSize();
+void setWatchMode(char isWatchMode);
+char isWatchMode();
+uint8 PLC_DeviceExecutor_setCurrPoint(uint8 taskIdx, uint32 taskPos);
+PLC_Device* PLC_DeviceExecutor_getDevice();
+
+uint8 PLC_DeviceExecutor_execOneScanTime(uint8 taskIdx, uint32 currPos, EventFlag priority);
+uint8 PLC_DeviceExecutor_reloadTask(uint8 internalInstructions[], int instructionMemorySize, int taskIdx, LaunchingCondition condition);
+uint8 PLC_DeviceExecutor_execInterruption(
+		uint8 interruptionFlag,
+		uint16* pos,
+		const char* functionName,
+		int line);
+/*
+uint8 PLC_DeviceExecutor_execWithDeviceControl(
+		PLC_DEVICE_Controller* controller ,
+		int scanTimeInterval);
+*/
+uint8 PLC_DeviceExecutor_execWithDeviceControl_Test(
+		int timeInterval,
+		int scanTimeInterval
+		);
+/*Recommending functions*/
+uint8 PLC_DeviceExecutor_init();
+uint8 PLC_DeviceExecutor_exec(
+		int scanTimeDelay);
+/****************************/
+
+void PLC_DeviceExecutor_progressTime();
+
+uint8 PLC_DeviceExecutor_readFromFileToBuffer(char* filePathName, char buffer[]);
+uint8 PLC_DeviceExecutor_readFromFilesToBuffer(char* filePathName[], uint8 fileCount, char buffer[]);
+
+PLC_DEVICE_Controller* PLC_DeviceExecutor_readFromFileToControl();
+
+uint8 parseToControlBuffer(char* srcLine, PLC_DEVICE_ControlInstruction* control);
+void printExecTimeOfScanTime();
+void addExecTime(double timeValue);
+#endif /* PLC_DEVICEEXECUTOR_H_ */

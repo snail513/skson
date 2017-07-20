@@ -1,0 +1,2427 @@
+/*
+ * PLC_PreExecFunctions.c
+ *
+ *  Created on: 2014. 11. 5.
+ *      Author: skson
+ */
+
+#ifndef PLC_PREEXECFUNCTIONS_H_
+#include "PLC_PreExecFunctions.h"
+#endif
+#include "PLC_Device.h"
+#include "PLC_OperatorDictionary.h"
+#include "PLC_RealDevice.h"
+#include "PLC_Log.h"
+#include <time.h>
+static char buf[200];
+static char currBitValue = 0;
+//static char lastBitValue = 0;
+extern uint8 PLC_TaskExecutor_isMCOn();
+inline uint32 getCurrBitValue(uint32 pos){
+	TaskList_setTaskCMDValue(pos, currBitValue);
+	//if(!PLC_TaskExecutor_isMCOn())
+	//	DBG_LOGPRINT("MC cut off the control area!\n");
+	return currBitValue & PLC_TaskExecutor_isMCOn();
+}
+inline uint32 preProcess_pick(uint32 pos){
+	return TaskList_getTaskCMDValue(pos);
+}
+inline uint32 preProcess_pull(uint32 pos){
+	return TaskList_setTaskCMDValue(pos, currBitValue);
+}
+inline uint32 preProcess_load(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx){
+
+	uint16 optMLCode = opt->nMLCode;
+	uint8* operandHead = inProcess_getIndexedOperand(inst, pos, opdIdx);
+	uint8 opndType = operandHead[0];//inst[OPERATOR_LENGTH+pos+OPERAND_LENGTH*opdIdx];
+
+	if(isValid(optMLCode, opdIdx, opndType)==FALSE)
+	{
+		DBG_LOGPRINT("[ERROR] Not valid load value : [%s : %s%d]", opt->strName, opndic[opndType].strType, opdIdx);
+		return PLC_DEVICE_FALSE_32;
+	}
+	return PLC_DEVICE_getDeviceValue(operandHead);
+}
+inline uint32 preProcess_loadPast(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx){
+	uint16 optMLCode = opt->nMLCode;
+	uint8* operandHead = inProcess_getIndexedOperand(inst, pos, opdIdx);
+	uint8 opndType = operandHead[0];//inst[OPERATOR_LENGTH+pos+OPERAND_LENGTH*opdIdx];
+
+	if(isValid(optMLCode, opdIdx, opndType)==FALSE)
+		return PLC_DEVICE_FALSE_32;
+
+	return PLC_DEVICE_getPastDeviceValue(operandHead);
+}
+inline uint32 preProcess_loadPulse(){
+	return dev.nCurrPulseStackPosision>=STACK_SIZE? PLC_DEVICE_FALSE_32: STACK_get(&(dev.device_pulse_stack), dev.nCurrPulseStackPosision);
+	//return TaskList_getTaskCMDValue(pos);
+}
+inline uint32 preProcess_loadDelta(){
+	if(dev.nCurrPulseStackPosision>=STACK_SIZE)
+		return PLC_DEVICE_FALSE_32;
+	return STACK_get(&(dev.device_delta_stack), dev.nCurrDeltaStackPosision);
+
+}
+inline uint32 preProcess_loadFront(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 offset){
+	//uint16 optMLCode = opt->nMLCode;
+	//uint8 operandCount = PLC_OPERATOR_DICTIONARY_getOperandCount(optMLCode);
+	long long ret = 0;
+	uint8 bitSize= 0;
+	long long push = 0;
+	uint8 opndType = inst[OPERATOR_LENGTH+pos];
+	//uint16* valpoint = (uint16*)&inst[OPERATOR_LENGTH+pos+1];
+	//uint16 opndValue = *valpoint -offset;
+	uint8* opnd = inProcess_getIndexedOperand(inst, pos, 0);
+	/*
+	if(isValid(optMLCode, 0, opndType)==FALSE || *valpoint<offset)
+	{
+		DBG_LOGSCAN(buf, "\t[ERROR] invalid operand type for %s!", opt->strName);
+		PLC_LOG_addLog(buf);
+		handleExecError(ERROR_CODE_OUT_OF_DEVICE_RANGE);
+		return PLC_DEVICE_FALSE_32;
+	}
+	*/
+	//DBG_LOGPRINT("%s%d\n",__FUNCTION__, __LINE__);
+	if(!test_getValue(&ret, &bitSize, opnd, -1))
+	{
+		return PLC_DEVICE_FALSE_32;
+	}
+	//DBG_LOGPRINT("[%s%d]=>%d\n",opndic[opndType].strType, opndValue, ret);
+	//printf("SFT ret = %d\n", ret);
+	if(opndType==OPERAND_ML_CODE_WB || opndType==OPERAND_ML_CODE_N )
+	{
+		//uint8 bitAddr = 0;
+		PLC_DEVICE_setDeviceValue(opnd, push, -1);
+		PLC_DEVICE_setDeviceValue(opnd, ret, 0);
+		//PLC_Register_set(opndType, opndValue, bitAddr, &push, TYPE_BIT);
+		//PLC_Register_set(opndType, opndValue, bitAddr+1, &ret, TYPE_BIT);
+		uint16 exp;
+		test_getWord(&exp,opnd[3], *(uint16*)&opnd[4]);
+		//DBG_LOGPRINT("[%s%d%s%d]<=%d, [%s%d%s%d]<=%d : %d\n",
+		//		opndic[opndType].strType, opndValue, opndic[opnd[3]].strType, *(uint16*)&opnd[4], push,
+		//		opndic[opndType].strType, opndValue+1, opndic[opnd[3]].strType, *(uint16*)&opnd[4], ret, exp);
+	}
+	else
+	{
+		PLC_DEVICE_setDeviceValue(opnd, push, -1);
+		PLC_DEVICE_setDeviceValue(opnd, ret, 0);
+		//PLC_Register_set(opndType, opndValue, 0, &push, TYPE_BIT);
+		//PLC_Register_set(opndType, opndValue+1, 0, &ret, TYPE_BIT);
+		//DBG_LOGPRINT("[%s%d]<=%d, [%s%d]<=%d\n",
+		//		opndic[opndType].strType, opndValue, push,
+		//		opndic[opndType].strType, opndValue+1, ret);
+	}
+
+	return TRUE;
+}
+
+
+inline uint32 preProcess_checkMC(){
+	return STACK_getSize(&(dev.device_mc_stack))==0?TRUE:STACK_pick(&(dev.device_mc_stack));//No MC control is effected.
+}
+inline uint32 preProcess_loadWord(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx){
+	uint16 optMLCode = opt->nMLCode;
+	uint8* getOperand = inProcess_getIndexedOperand(inst, pos, opdIdx);
+
+	if(getOperand==NULL)
+	{
+		DBG_LOGPRINT("\t[ERROR] getting operand is failed!\n");
+		return PLC_DEVICE_FALSE_32;
+	}
+
+	uint8 opndType = getOperand[0];
+	if(!isValid(optMLCode, opdIdx, opndType) && opndType!=OPERAND_ML_CODE_K)
+	//if(isValid(optMLCode, opdIdx, opndType)==FALSE)
+	{
+		//
+		DBG_LOGPRINT("\t[ERROR] Invalid operand type for operator %s!\n", opndic[opndType].strType);
+		return PLC_DEVICE_FALSE_32;
+	}
+	//
+	return PLC_DEVICE_getDeviceWordValue(getOperand);
+}
+inline uint8 preProcess_loadLastCMDValue(uint32 pos){
+	currBitValue = TaskList_getTaskCMDValue(pos);
+	return currBitValue;
+}
+inline uint8 preProcess_saveLastCMDValue(uint32 pos){
+	TaskList_setTaskCMDValue(pos, currBitValue);
+	return currBitValue;
+}
+inline int inProcess_getIndexPosition(uint8* opndType, uint8 inst[], uint32* pos, uint8 opdIdx)
+{
+	int currPos = OPERATOR_LENGTH+(*pos);
+	int i;
+	*opndType = inst[currPos];
+	for(i=0;i<opdIdx;i++)
+	{
+
+		//printf("%s %d\n",__FUNCTION__, __LINE__);
+		*opndType = inst[currPos];
+		//DBG_LOGSCAN(buf, "%d\n",opndType);PLC_LOG_addLog(buf);
+		PLC_Operand* opd = PLC_OPERAND_DICTIONARY_findOperand(*opndType);
+		//DBG_LOGSCAN(buf, "%s\n",opd->strType);PLC_LOG_addLog(buf);
+		//printf("OPD Type %s(ML = %d)\n", opd->strType,*opndType);PLC_LOG_addLog(buf);
+		if(opd->nMLCode==OPERAND_ML_CODE_STR)
+			currPos += strlen((char*)&inst[currPos+1]);
+		if(opd->nMLCode==OPERAND_ML_CODE_DE)
+			currPos += (1+sizeof(double));
+		else if(opd->nMLCode==OPERAND_ML_CODE_DK)
+			currPos += (1+sizeof(float));
+		else if(opd->nMLCode==OPERAND_ML_CODE_E)
+			currPos += (1+sizeof(int));
+		else if(opd->nMLCode==OPERAND_ML_CODE_K)
+			currPos += (1+sizeof(short));
+		else if(opd->nMLCode==OPERAND_ML_CODE_N)
+			currPos += 2*(1+sizeof(short));
+		else if(opd->nMLCode==OPERAND_ML_CODE_Z)
+			currPos += 2*(1+sizeof(short));
+		else
+			currPos += 3;
+	}
+	return currPos;
+}
+
+inline uint32 preProcess_loadDoubleWord(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx){
+	uint16 optMLCode = opt->nMLCode;
+
+	uint8 opndType;
+	uint8* currOperand;// = OPERATOR_LENGTH+(*pos);
+	/*
+	int i;
+	for(i=0;i<30;i++)
+	{
+		printf("%02X ", inst[i]);
+	}
+	printf("\n");*/
+	//DBG_LOGPRINT("[%s%d]\n", __FUNCTION__, __LINE__);
+	currOperand = inProcess_getIndexedOperand(inst, pos, opdIdx);
+	opndType = currOperand[0];
+	//DBG_LOGPRINT("[%s%d]\n", __FUNCTION__, __LINE__);
+	uint8 valid =isValid(optMLCode, opdIdx, opndType);
+	//DBG_LOGPRINT("[%s%d]\n", __FUNCTION__, __LINE__);
+	//DBG_LOGPRINT( "\t[Load DWord] optMLCode(HEX) = %X, opdIdx(HEX) = %X, opndType(HEX) = %X\n",  optMLCode, opdIdx, opndType);
+	if(!valid){
+		DBG_LOGPRINT( "[opt %s(index = %d)->%s] not valid\n", PLC_OPERATOR_DICTIONARY_findOperator(optMLCode)->strName, opdIdx, opndic[opndType].strType);
+		return PLC_DEVICE_FALSE_32;
+	}
+	//DBG_LOGPRINT("[%s%d]\n", __FUNCTION__, __LINE__);
+	uint32 ret = PLC_DEVICE_getDeviceDoubleWordValue(currOperand);
+	//DBG_LOGPRINT("[%s%d]\n", __FUNCTION__, __LINE__);
+	//DBG_LOGPRINT( "preProcess_loadDoubleWord ret :%X(%f)\n", ret, *(float*)&ret);
+	return ret;
+}
+inline float preProcess_loadFloat(uint8 inst[], uint32* pos, PLC_Operator* opt, uint8 opdIdx){
+		//uint8 operandCount = PLC_OPERATOR_DICTIONARY_getOperandCount(optMLCode);
+
+	uint8 opndType;
+	int currPos;// = OPERATOR_LENGTH+(*pos);
+	/*
+	int i;
+	for(i=0;i<30;i++)
+	{
+		DBG_LOGSCAN(buf, "%02X ", inst[i]);PLC_LOG_addLog(buf);
+	}
+	DBG_LOGSCAN(buf,"\n");PLC_LOG_addLog(buf);*/
+	currPos = inProcess_getIndexPosition(&opndType, inst,pos,opdIdx);
+
+	//uint8 valid =isValid(optMLCode, opdIdx, opndType);
+
+	/*DBG_LOGSCAN(buf, "\t\tbefore[getFloatValue] currPos: %d,  %02X %02X %02X %02X %02X = %f\n",
+			currPos, inst[currPos+0], inst[currPos+1], inst[currPos+2], inst[currPos+3], inst[currPos+4],PLC_DEVICE_getDeviceFloatValue(&inst[currPos]) );PLC_LOG_addLog(buf);
+			*/
+	return PLC_DEVICE_getDeviceFloatValue(&inst[currPos]);
+
+
+
+}//TODO
+inline double preProcess_loadDouble(uint8 inst[], uint32* pos, PLC_Operator* opt, uint8 opdIdx){
+
+
+	uint8 opndType;
+	int currPos;// = OPERATOR_LENGTH+(*pos);
+	/*
+	int i;
+	for(i=0;i<30;i++)
+	{
+		DBG_LOGSCAN(buf, "%02X ", inst[i]);PLC_LOG_addLog(buf);
+	}
+	DBG_LOGSCAN(buf,"\n");PLC_LOG_addLog(buf);*/
+	currPos = inProcess_getIndexPosition(&opndType, inst,pos,opdIdx);
+
+	/*DBG_LOGSCAN(buf, "\t\tbefore[getFloatValue] currPos: %d,  %02X %02X %02X %02X %02X = %f\n",
+			currPos, inst[currPos+0], inst[currPos+1], inst[currPos+2], inst[currPos+3], inst[currPos+4],PLC_DEVICE_getDeviceFloatValue(&inst[currPos]) );PLC_LOG_addLog(buf);
+			*/
+	return PLC_DEVICE_getDeviceDoubleValue(&inst[currPos]);
+
+
+}//TODO
+
+inline uint8* preProcess_loadString(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx){
+	uint16 optMLCode = opt->nMLCode;
+		//uint8 operandCount = PLC_OPERATOR_DICTIONARY_getOperandCount(optMLCode);
+
+	uint32 currPos = OPERATOR_LENGTH + pos;
+	int i;
+
+	uint8 opndType = inst[currPos];
+	//uint16* val = (uint16*)&inst[currPos+1];
+
+	for(i=0;i<opdIdx;i++)
+	{
+		//printf("currType = %s\n", opndic[opndType].strType);
+		if(opndType == OPERAND_ML_CODE_STR)
+		{
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			currPos += 1+getOperandStrLength(inst, &currPos);
+			//printf("o : %d, strlen = %d \n", o++, (uint16)strlen(&inst[currPos+1]));
+		}
+		else if(opndType == OPERAND_ML_CODE_DK || opndType == OPERAND_ML_CODE_E )
+		{
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			currPos += 5;
+		}
+		else if(opndType == OPERAND_ML_CODE_DE)
+		{
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			currPos += 9;
+		}
+		else if(opndType == OPERAND_ML_CODE_N)
+		{
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			//opndSize = inst[currPos+1];
+			opndType = inst[currPos+2];
+			//val = (uint16*)&inst[currPos+3];
+			currPos += 6;
+		}
+		else if(opndType == OPERAND_ML_CODE_Z)
+		{
+			opndType = inst[currPos+2];
+			currPos += 6;
+		}
+		else
+		{
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			currPos += 3;
+		}
+		opndType = inst[currPos];
+	}
+
+	if(opndType == OPERAND_ML_CODE_N)
+	{
+		currPos+=3;//Device value position
+	}
+	//printf("opndType : %02X = %s \n", opndType, opndic[opndType].strType);
+	//printf("currPos = %d\n", currPos);
+
+	//uint8 opndType = inst[OPERATOR_LENGTH+ OPERAND_LENGTH*opdIdx+pos];
+	//printf("opType = %d\n",  opndType);
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+	//TODO fix bug 2015. 05.19
+	if(isValid(optMLCode, opdIdx, opndType)==FALSE){
+
+		DBG_LOGPRINT("\t[device] invalid : %s - %s - opdIdx : %d, pos - %d!\n",
+				PLC_OPERATOR_DICTIONARY_findOperator(optMLCode)->strName,
+				opndic[opndType].strType,
+				opdIdx, currPos);
+		/*printf("\t[device] invalid : %s - %s - opdIdx : %d, pos - %d!\n",
+				PLC_OPERATOR_DICTIONARY_findOperator(optMLCode)->strName,
+				opndic[opndType].strType,
+				opdIdx, currPos);*/
+		return NULL;
+	}
+	uint8* ret = (uint8*)PLC_DEVICE_getDeviceString(&inst[currPos]);
+	/*printf("\t[device] load position %s%d = %d\n",
+			opndic[opndType].strType,
+			*(short*)&inst[OPERATOR_LENGTH+pos+OPERAND_LENGTH*opdIdx+1],
+			ret[0]+ret[1]*256);*/
+	if(ret==NULL){
+		//printf("%s %d\n", __FUNCTION__, __LINE__);
+		return NULL;
+	}
+	if(strlen((char*)ret)>PLC_STRING_MAX_LENGTH)
+	{
+		handleExecError(ERROR_CODE_OUT_OF_DEVICE_RANGE);
+		return NULL;
+	}
+	/*if(inst[currPos] ==OPERAND_ML_CODE_DK)
+	{
+		//printf("[%s %02X %02X %02X %02X]%d | opdIdx = %d \n", opndic[inst[currPos]].strType,
+		//		inst[currPos+4], inst[currPos+3], inst[currPos+2], inst[currPos+1],*ret, opdIdx);
+	}
+	else
+		//printf("[%s%d]%d | opdIdx = %d \n", opndic[inst[currPos]].strType, *(uint16*)&inst[currPos+1], *ret, opdIdx);
+
+	 */
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+	return ret;
+}
+
+inline uint32 preProcess_compareString(uint8 inst[], uint32 *pos, PLC_Operator* opt){
+	/*int i;
+	for(i=0;i<50;i++)
+	{
+		printf("%02d ", inst[i]);
+		if(i%16==15)
+			printf("\n");
+		else if(i%8==7)
+			printf("\t");
+
+	}
+	printf("\n");*/
+	int ret;
+	uint16* getFirstString = (uint16*)preProcess_loadString(inst, *pos, opt, 0);
+
+	uint16* getSecondString = (uint16*)preProcess_loadString(inst, *pos, opt, 1);
+
+	/*DBG_LOGSCAN(buf, "\t[%s] Compare %s with %s.\n"
+			,__FUNCTION__
+			, (char*)getFirstString
+			, (char*)getSecondString);PLC_LOG_addLog(buf);
+*/
+	if(getFirstString==NULL|| getSecondString ==NULL)
+	{
+		return FALSE;
+	}
+
+	ret = strcmp((char*)getFirstString,(char*)getSecondString);
+	if(ret==0)
+		return COMPARE_RESULT_EQUAL;
+	else if(ret>0)
+		return COMPARE_RESULT_FIRST_IS_BIG;
+	else
+		return COMPARE_RESULT_FIRST_IS_SMALL;
+
+}
+
+inline uint32 preProcess_compareWordBlock(
+		uint8 inst[],
+		uint32 *pos,
+		PLC_Operator* opt,
+		uint32 (*comparingFunction)(void*, void*),
+		int isPulseOn)
+{
+	uint32 offset;
+	uint32 getLastValue = preProcess_pick(*pos);
+	uint32 getCurrValue = getCurrBitValue(*pos);
+	uint8* firstOperand = inProcess_getIndexedOperand(inst, *pos, 0);
+	uint8* secondOperand = inProcess_getIndexedOperand(inst, *pos, 1);
+	uint8* thirdDst = inProcess_getIndexedOperand(inst, *pos, 2);
+	uint8 isSingleToMultiple = opndic[firstOperand[0]].bIsConstant;
+	uint8* forthSize = inProcess_getIndexedOperand(inst, *pos, 3);
+	long long size = 0;
+	uint8 size_size;
+	if(!test_getValue(&size, &size_size, forthSize, 0))
+		return FALSE;
+
+	if(size == PLC_DEVICE_FALSE_32)
+	{
+		DBG_LOGPRINT("[Error %s] Error while loading size\n", __FUNCTION__);
+		return FALSE;
+	}
+
+	if(((isPulseOn==FALSE) && getCurrValue) ||
+			(isPulseOn && inProcess_detectRaisingEdge(getCurrValue,getLastValue&0x01)))
+	{
+		for(offset=0;offset<size;offset++){
+			long long val1=0;
+			long long val2=0;
+			uint8 size1=0;
+			uint8 size2=0;
+
+			if(!test_getValue(&val1, &size1, firstOperand, offset*(!isSingleToMultiple)))
+				return FALSE;
+			if(!test_getValue(&val2, &size2, secondOperand, offset))
+				return FALSE;
+
+			uint32 setVal = comparingFunction((void*)&val1, (void*)&val2);
+
+			if(PLC_DEVICE_setDeviceValue(thirdDst, setVal, offset)==PLC_DEVICE_FALSE_32)
+			{
+				DBG_LOGPRINT("[ERROR %s] Line : %d!\n", __FUNCTION__, __LINE__);
+				return PLC_DEVICE_FALSE_32;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+inline uint32 preProcess_compareDoubleWordBlock(uint8 inst[], uint32 *pos, PLC_Operator* opt, uint32 (*comparingFunction)(void*, void*), int isPulseOn)
+{
+
+	uint32 offset;
+	uint32 getLastValue = preProcess_pick(*pos);
+	uint32 getCurrValue = getCurrBitValue(*pos);
+	uint8* firstOperand = inProcess_getIndexedOperand(inst, *pos, 0);
+	uint8* secondOperand = inProcess_getIndexedOperand(inst, *pos, 1);
+	uint8* thirdDst = inProcess_getIndexedOperand(inst, *pos, 2);
+	uint8 isSingleToMultiple = opndic[firstOperand[0]].bIsConstant;
+	uint8* forthSize = inProcess_getIndexedOperand(inst, *pos, 3);
+	long long size = 0;
+	uint8 size_size;
+	if(!test_getValue(&size, &size_size, forthSize, 0))
+		return FALSE;
+
+	if(size == PLC_DEVICE_FALSE_32)
+	{
+		DBG_LOGPRINT("[Error %s] Error while loading size\n", __FUNCTION__);
+		return FALSE;
+	}
+
+	if(((isPulseOn==FALSE) && getCurrValue) ||
+			(isPulseOn && inProcess_detectRaisingEdge(getCurrValue,getLastValue&0x01)))
+	{
+		for(offset=0;offset<size;offset++){
+			long long val1=0;
+			long long val2=0;
+			uint8 size1=0;
+			uint8 size2=0;
+
+			if(!test_getDValue((int*)&val1, &size1, firstOperand, 2*offset*(!isSingleToMultiple)))
+				return FALSE;
+			if(!test_getDValue((int*)&val2, &size2, secondOperand, 2*offset))
+				return FALSE;
+			/*DBG_LOGPRINT("DBK %X | %X\n",
+					val1, val2);*/
+			uint32 setVal = comparingFunction((void*)&val1, (void*)&val2);
+
+			if(PLC_DEVICE_setDeviceValue(thirdDst, setVal, offset)==PLC_DEVICE_FALSE_32)
+			{
+				DBG_LOGPRINT("[ERROR %s] Line : %d!\n", __FUNCTION__, __LINE__);
+				return PLC_DEVICE_FALSE_32;
+			}
+		}
+	}
+
+	return TRUE;
+}
+inline uint32 preProcess_calculateFloat(
+		uint8 inst[], uint32 *pos, PLC_Operator* opt,
+		uint8 (*calculatingFunction)(uint8*, uint8*, uint8*, uint8),
+		int isPulseOn, int hasNewDst, uint8 byteSize){
+
+	uint8* getFirstWord;
+	uint8* getSecondWord;
+	uint8*	tarWord;
+	uint8 destOpndType;
+	long long destOpndVal;
+	uint16 optMLCode = opt->nMLCode;
+	uint8 destinationOperandIndex;
+
+	int j;
+	int currPos;
+
+
+	if(!hasNewDst)
+	{
+		getFirstWord  = preProcess_loadString(inst, *pos, opt, 1);
+		getSecondWord = preProcess_loadString(inst, *pos, opt, 0);
+		tarWord = getFirstWord;
+		destinationOperandIndex = 1;
+		//printf("!hasNewDst\n");
+	}else{
+		getFirstWord  = preProcess_loadString(inst, *pos, opt, 0);
+		getSecondWord = preProcess_loadString(inst, *pos, opt, 1);
+		tarWord= preProcess_loadString(inst, *pos, opt, 2);
+		destinationOperandIndex = 2;
+		//printf("hasNewDst\n");
+	}
+
+	/*if(byteSize==4)
+		printf("first[%d | %X] :%02X %02X, second[%d | %X] : %02X %02X\n",
+				*(float*)getFirstWord, *(float*)getFirstWord,
+				getFirstWord[0], getFirstWord[1],
+				*(float*)getSecondWord, *(float*)getSecondWord,
+				getSecondWord[0], getSecondWord[1]);
+	else if(byteSize==8)
+		printf("first[%d | %X] :%02X %02X %02X %02X, second[%d | %X] : %02X %02X %02X %02X\n",
+				*(double*)getFirstWord, *(double*)getFirstWord,
+				getFirstWord[0], getFirstWord[1], getFirstWord[2], getFirstWord[3],
+				*(double*)getSecondWord, *(double*)getSecondWord,
+				getSecondWord[0], getSecondWord[1], getSecondWord[2], getSecondWord[3]);*/
+	currPos = OPERATOR_LENGTH+*pos;
+	uint8 opndType = inst[currPos];
+	for(j=0;j<destinationOperandIndex;j++)
+	{
+		//printf("[currPos] : %d\n", currPos);
+		currPos += OPND_DICT_ByteSize(&inst[currPos]);
+		/*if(opndType == OPERAND_ML_CODE_STR)
+		{
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			//printf("[opndType] : %d, STR\n", opndType);
+			currPos += 1+getOperandStrLength(inst, &currPos);
+			//printf("o : %d, strlen = %d \n", o++, (uint16)strlen(&inst[currPos+1]));
+		}
+		else if(opndType == OPERAND_ML_CODE_DE)
+		{
+			//printf("[opndType] : %d, DK\n", opndType);
+			currPos += 8;
+		}
+		else if(opndType == OPERAND_ML_CODE_DK || opndType == OPERAND_ML_CODE_E)
+		{
+			//printf("[opndType] : %d, DK\n", opndType);
+			currPos += 5;
+		}
+		else if(opndType == OPERAND_ML_CODE_N || opndType == OPERAND_ML_CODE_Z){
+			currPos += 6;
+		}
+		else
+		{
+			//printf("[opndType] : %d, else\n", opndType);
+			currPos += 3;
+		}*/
+		//opndType = inst[currPos];
+		//printf("[opndType%d] : %d\n", currPos, inst[currPos]);
+	}
+	destOpndType =opndType;
+	destOpndVal = *(short*)&inst[currPos+1];
+	if(destOpndType == OPERAND_ML_CODE_Z)
+	{
+		destOpndType = inst[currPos+3];
+		destOpndVal += *(short*)&inst[currPos+4];
+	}
+	//printf("third type = %s, third value = %f\n", opndic[destOpndType].strType, *(float*)destOpndVal);
+	//uint16* valpoint = (uint16*)&inst[currPos+1];
+	//destOpndVal = inst[currPos+1]*256+ inst[currPos+2];
+
+	uint32 getLastValue = preProcess_pick(*pos);
+	uint32 getCurrValue = getCurrBitValue(*pos);
+	//printf("[%s]%d\n", __FUNCTION__, __LINE__);
+	if(getFirstWord==NULL|| getSecondWord ==NULL)
+	{
+		//printf("[%s]%d\n", __FUNCTION__, __LINE__);
+		//printf("[ERROR] while loading first Operand or second operand.\n");
+		return PLC_DEVICE_FALSE_32;
+	}
+	if(((isPulseOn==FALSE) && ((getCurrValue&0x01)==1))||
+			((isPulseOn==TRUE) && inProcess_detectRaisingEdge(getCurrValue, getLastValue)))
+	{
+
+		if(isValid(optMLCode, destinationOperandIndex, destOpndType)==FALSE){
+			/*DBG_LOGSCAN(buf,
+					"\t[%s] error while checking operand& operator [%s%d]%d\n",
+					opt->strName,
+					opndic[destOpndType].strType,
+					destOpndVal,
+					PLC_DEVICE_getDeviceValue( &inst[OPERATOR_LENGTH+*pos]));
+			PLC_LOG_addLog(buf);*/
+			DBG_LOGPRINT("[ERROR] invalid dst register - %s %d, [%s%d]\n", __FUNCTION__, __LINE__, opndic[destOpndType].strType, (int)destOpndVal);
+			return PLC_DEVICE_FALSE_32;
+		}
+
+		if(calculatingFunction(tarWord, getFirstWord,getSecondWord, byteSize)==FALSE)
+		{
+			DBG_LOGPRINT("[ERROR] calculation failed - %s %d\n", __FUNCTION__, __LINE__);
+			//printf("[%s]%d\n", __FUNCTION__, __LINE__);
+			return PLC_DEVICE_FALSE_32;
+		}
+
+		/*else if(byteSize==4)
+		{
+			printf("\t[%s] int calculation. input1 : %d(X:%X,F:%F), input2 : %d(X:%X,F:%F), "
+					"\n\t\toutput value = [%s%d]%d(X:%X,F:%F)\n",
+					opt->strName,
+					*(int*)getFirstWord,*(int*)getFirstWord,*(float*)getFirstWord,
+					*(int*)getSecondWord,*(int*)getSecondWord,*(float*)getSecondWord,
+					opndic[destOpndType].strType,
+					destOpndVal,
+					*((int*)tarWord), *((int*)tarWord), *((int*)tarWord));
+		}
+		else if(byteSize==8)
+		{
+			printf("\t[%s]  llong calculation. input1 : %d(X:%X,DF:%F), input2 : %d(X:%X,DF:%F), output value = [%s%d]%d\n",
+					opt->strName,
+					*(long long*)getFirstWord,*(long long*)getFirstWord,*(double*)getFirstWord,
+					*(long long*)getSecondWord,*(long long*)getSecondWord,*(double*)getSecondWord,
+					opndic[destOpndType].strType,
+					destOpndVal,
+					*((long long*)tarWord));
+		}*/
+	}
+
+	return TRUE;
+}
+inline uint32 preProcess_calculate(
+		uint8 inst[], uint32 *pos,
+		PLC_Operator* opt, void* calculatingFunction,
+		/*uint8 (*calculatingFunction)(uint8*, uint8*, uint8*, uint8),*/
+		int isPulseOn, int hasNewDst, uint8 byteSize)
+{
+	uint32 getPastValue = preProcess_pick(*pos);
+	uint32 getCurrValue = getCurrBitValue(*pos);
+	//printf("%s %d!\n", __FUNCTION__, __LINE__);
+	if(getCurrValue ==PLC_DEVICE_FALSE_32)
+	{
+		printf("Curr sequence bit value has been lost!\n");
+		return FALSE;
+	}
+	if(isPulseOn){
+		if(!inProcess_detectRaisingEdge(getCurrValue, getPastValue))
+		{
+			//printf("Raising edge off\n");
+			return TRUE;
+		}
+	}else
+		if((getCurrValue&0x01)==0)
+		{
+			//printf("%s %d!\n", __FUNCTION__, __LINE__);
+			return TRUE;
+		}
+	//printf("%s %d!\n", __FUNCTION__, __LINE__);
+	uint8* firstOperand;
+	uint8* secondOperand;
+	uint8* thirdOperand;
+	//printf("%s %d!\n", __FUNCTION__, __LINE__);
+	int (*function)(uint8*, uint8*, uint8*, uint8);
+	if(hasNewDst)
+	{
+		firstOperand = inProcess_getIndexedOperand(inst, *pos, 0);
+		secondOperand = inProcess_getIndexedOperand(inst, *pos, 1);
+		thirdOperand = inProcess_getIndexedOperand(inst, *pos, 2);
+	}
+	else
+	{
+		firstOperand = inProcess_getIndexedOperand(inst, *pos, 1);
+		secondOperand = inProcess_getIndexedOperand(inst, *pos, 0);
+		thirdOperand = inProcess_getIndexedOperand(inst, *pos, 1);
+	}
+
+	//printf("load calculation Position: %d, %d\n", firstOperand, secondOperand);
+	function= calculatingFunction;
+
+
+
+	if(byteSize == 2)
+	{
+
+		long long firstValue;
+		long long secondValue;
+
+		uint8 bitSize;
+
+		if(!test_getValue((long long*)&firstValue, &bitSize, firstOperand, 0))
+		{
+			printf("\t[Error] while getting first value \n");
+			return FALSE;
+		}
+
+		if(!test_getValue((long long*)&secondValue, &bitSize, secondOperand, 0))
+		{
+			printf("\t[Error] while getting second value \n");
+			return FALSE;
+		}
+
+		if((void*)function == (void*)inProcess_divBCD || (void*)function == (void*)inProcess_divInt
+			||(void*)function == (void*)inProcess_mltBCD || (void*)function == (void*)inProcess_mltInt)
+		{
+
+			int thirdValue;
+			if(!function((uint8*) &thirdValue, (uint8*)&firstValue, (uint8*)&secondValue, byteSize))
+			{
+				printf("\t[Error] while calculating third value \n");
+				return FALSE;
+			}
+			//printf("getVal : %d(0x%X), %d(0x%X), %d(0x%X)\n", firstValue, firstValue, secondValue, secondValue, thirdValue, thirdValue);
+			//printf("third operand : %02X %02X %02X %02X %02X %02X\n", thirdOperand[0],thirdOperand[1],thirdOperand[2],thirdOperand[3],thirdOperand[4], thirdOperand[5]);
+			return PLC_DEVICE_setDeviceValueBySize(thirdOperand, (long long)thirdValue, 8*(sizeof(thirdValue)));
+		}
+		else{
+			short thirdValue;
+			if(!function((uint8*) &thirdValue, (uint8*)&firstValue, (uint8*)&secondValue, byteSize))
+			{
+				printf("\t[Error] while calculating third value \n");
+				return FALSE;
+			}
+			//printf("getVal : %d(0x%X), %d(0x%X), %d(0x%X)\n", firstValue, firstValue, secondValue, secondValue, thirdValue, thirdValue);
+			//printf("third operand : %02X %02X %02X %02X %02X %02X\n", thirdOperand[0],thirdOperand[1],thirdOperand[2],thirdOperand[3],thirdOperand[4], thirdOperand[5]);
+			return PLC_DEVICE_setDeviceValueBySize(thirdOperand, thirdValue, 8*(sizeof(thirdValue)));
+		}
+	}else if(byteSize == 4)
+	{
+
+		int firstValue;
+		int secondValue;
+
+		uint8 bitSize;
+
+		if(!test_getDValue((int*)&firstValue, &bitSize, firstOperand, 0))
+		{
+			printf("\t[Error] while getting first value \n");
+			return FALSE;
+		}
+
+		if(!test_getDValue((int*)&secondValue, &bitSize, secondOperand, 0))
+		{
+			printf("\t[Error] while getting second value \n");
+			return FALSE;
+		}
+		//printf("getValue : %d %d\n", firstValue, secondValue);
+		//printf("%s %d\n", __FUNCTION__, __LINE__);
+		if((void*)function == (void*)inProcess_divBCD || (void*)function == (void*)inProcess_divInt
+			||(void*)function == (void*)inProcess_mltBCD || (void*)function == (void*)inProcess_mltInt)
+		{
+			long long thirdValue;
+			if(!function((uint8*) &thirdValue, (uint8*)&firstValue, (uint8*)&secondValue, byteSize))
+			{
+				printf("\t[Error] while calculating third value \n");
+				return FALSE;
+			}
+			//printf("getVal : %d, %d, %d\n", firstValue, secondValue, thirdValue);
+			return PLC_DEVICE_setDeviceValueBySize(thirdOperand, thirdValue, 8*(sizeof(thirdValue)));
+		}
+		else{
+			int thirdValue=0;
+			if(!function((uint8*) &thirdValue, (uint8*)&firstValue, (uint8*)&secondValue, byteSize))
+			{
+				printf("\t[Error] while calculating third value \n");
+				return FALSE;
+			}
+			//printf("getVal : %d(0x%X), %d(0x%X), %d(0x%X)\n", firstValue, firstValue, secondValue, secondValue, thirdValue, thirdValue);
+			return PLC_DEVICE_setDeviceValueBySize(thirdOperand, thirdValue, 8*(sizeof(thirdValue)));
+
+		}
+	}
+	//printf("\t[ERROR] target size is wrong: %d!", byteSize);
+	return TRUE;
+
+}
+
+
+inline uint32 preProcess_calculateFloatBlock(uint8 inst[], uint32 *pos, PLC_Operator* opt, uint32 (*calculatingFunction)(double, double), int isPulseOn, int hasNewDst){
+	return FALSE;
+}
+
+inline uint8 inProcess_getOperandType(uint8 inst[], uint32* pos, int index){
+	uint8* operandPos = inProcess_getIndexedOperand(inst, *pos, index);
+	return operandPos[0];
+}
+inline uint8* inProcess_getOperandValue(uint8 inst[], uint32* pos, int index){
+	uint8* operandPos = inProcess_getIndexedOperand(inst, *pos, index);
+	return &operandPos[1];
+}
+
+
+inline uint8 inProcess_logicSequence(uint8 inst[], uint32* pos, PLC_Operator* opt, uint8 logicFlag, uint8 pulseFlag, uint8 invertFlag)
+{
+	uint32 getValue = preProcess_load(inst, *pos, opt, 0);
+	if(getValue==PLC_DEVICE_FALSE_32)
+		return 0xFF;
+
+	if(pulseFlag==FUNCTION_PULSETYPE_RAISING)
+		getValue = inProcess_detectRaisingEdge(getValue, preProcess_loadPast(inst, *pos, opt, 0));
+	else if(pulseFlag==FUNCTION_PULSETYPE_FALLING)
+		getValue = inProcess_detectFallingEdge(getValue, preProcess_loadPast(inst, *pos, opt, 0));
+
+	if(invertFlag == FUNCTION_OUTTYPE_INVERT)
+		getValue = !getValue;
+
+	if(logicFlag == FUNCTION_TYPE_AND)
+		return getCurrBitValue(*pos) & getValue;
+	else
+		return getCurrBitValue(*pos) | getValue;
+}
+
+inline uint32 inProcess_inv(uint32 in){
+	return !in;
+}
+inline uint32 inProcess_detectRaisingEdge(uint32 current, uint32 past){
+	//DBG_LOGPRINT("in(%d|%d)\n", current, past);
+	//if((current==TRUE) & (past==FALSE))
+	//	return 1;
+	//if((current==TRUE) & (past==2))
+	//	return 1;
+	return (current==TRUE) & (past==FALSE);
+}
+inline uint32 inProcess_detectFallingEdge(uint32 current, uint32 past){
+	//DBG_LOGSCAN(buf, "in(%d) & 0x03 = %d", in, in & 0x03);PLC_DEVICE_addLog(buf);
+	//if()
+	//	return 1;
+	return (current==FALSE) & (past==TRUE);
+}
+inline uint32 inProcess_and(uint32 in, uint32 pos){
+	uint32 value = getCurrBitValue(pos);//preProcess_pick(pos);//STACK_pick(&(dev.device_stack));
+	//DBG_LOGSCAN(buf, "\t[in & current = rst] %02X and %02X = %02X\n", in, value,in & value );
+	PLC_LOG_addLog(buf);
+	return (in & value);
+}
+inline uint32 inProcess_or(uint32 in, uint32 pos){
+	//uint32 value = STACK_pick(&(dev.device_stack));
+	uint32 value = getCurrBitValue(pos);//preProcess_pick(pos);
+	//DBG_LOGSCAN(buf, "\t[in & current = rst] %02X or %02X = %02X\n", in, value,in | value );
+	PLC_LOG_addLog(buf);
+	return (in | value);
+}
+inline uint32 inProcess_savePulse(uint32 in){
+	return STACK_set(&(dev.device_pulse_stack), dev.nCurrPulseStackPosision++, in);
+}
+inline uint32 inProcess_saveDelta(uint32 in){
+	return STACK_set(&(dev.device_delta_stack), dev.nCurrDeltaStackPosision++, in);
+}
+inline uint32 inProcess_pushMC(uint32 in){
+	return STACK_push(&(dev.device_mc_stack), in);
+}
+inline uint32 inProcess_pullMC(){
+
+	return STACK_pull(&(dev.device_mc_stack));
+}
+
+inline uint32 inProcess_swapByte(uint16* value){
+	if(value == NULL)
+		return PLC_DEVICE_FALSE_32;
+	//DBG_LOGSCAN(buf, "\t[SWAP] in : %04X\n", *value);	PLC_LOG_addLog(buf);
+	uint8* valueSwap;
+	uint8 tmp;
+	valueSwap = (uint8*)value;
+	tmp = valueSwap[0];
+	valueSwap[0] = valueSwap[1];
+	valueSwap[1] = tmp;
+	//DBG_LOGSCAN(buf, "\t[SWAP] out : %04X\n", *value);	PLC_LOG_addLog(buf);
+	return TRUE;
+}
+inline uint8 inProcess_isPulse(uint8 value){
+	return (((value>>1)&0x03)==1);
+}
+
+inline uint8 inProcess_calculateBK(uint8 inst[], uint32 pos, void* calculatingFunction)
+{
+	uint8 rstSize;
+	uint8 *s1Opnd = inProcess_getIndexedOperand(inst, pos, 0);
+	uint8 *s2Opnd = inProcess_getIndexedOperand(inst, pos, 1);
+	uint8 *dOpnd = inProcess_getIndexedOperand(inst, pos, 2);
+	uint8 *nOpnd = inProcess_getIndexedOperand(inst, pos, 3);
+	uint8 (*function)(uint8*, uint8*, uint8*, uint8) = calculatingFunction;
+	int idx;
+	uint16 nVal ;//= PLC_DEVICE_getDeviceValue(nOpnd);
+	if(!test_getValue((long long*)&nVal, &rstSize, nOpnd, 0))
+		return FALSE;
+	if(nVal ==PLC_DEVICE_FALSE_32)
+		return FALSE;
+	//DBG_LOGPRINT("nVal %d\n", nVal);
+	for(idx=0;idx<nVal;idx++)
+	{
+		long long src1=0, src2=0, dst=0;
+		if(!test_getValue(&src1, &rstSize, s1Opnd, idx))
+			return FALSE;
+		if(!test_getValue(&src2, &rstSize, s2Opnd, idx))
+			return FALSE;
+		if(!function((uint8*)&dst, (uint8*)&src1, (uint8*)&src2, 2))
+			return FALSE;
+
+		//DBG_LOGPRINT("[idx%d]%d+%d => %d\n", idx, src1, src2, dst);
+
+		if(!PLC_DEVICE_setDeviceValue(dOpnd, dst, idx))
+			return FALSE;
+	}
+	return TRUE;
+
+}
+
+inline uint32 inProcess_compareValue(uint8 inst[], uint32* pos, PLC_Operator* opt,
+		uint32(*compareFunction)(void* inFirst, void* inSecond),
+		 uint8 byteSize, uint8 functionType)
+{
+	uint32 ret;
+
+	long long firstValue=0;
+	long long secondValue=0;
+
+	uint32 getCurrValue;
+
+	if(byteSize==2)
+	{
+		//PLC_LOG_addLog("\t[COMPARE]Loading WORD\n");
+		firstValue = preProcess_loadWord(inst, *pos, opt, 0);
+		if(firstValue==PLC_DEVICE_FALSE_32)
+		{
+			DBG_LOGPRINT("\t[%s] Error while picking first value.[pos = %d]\n", opt->strName, *pos);
+			return FALSE;
+		}
+		//PLC_LOG_addLog("\t[COMPARE]Loading DWORD\n");
+		secondValue = preProcess_loadWord(inst, *pos, opt, 1);
+
+		if(secondValue==PLC_DEVICE_FALSE_32)
+		{
+			DBG_LOGPRINT("\t[%s] Error while picking second value.[pos = %d]\n", opt->strName, *pos);
+			return FALSE;
+		}
+
+	}
+	else if(byteSize==4)
+	{
+		//DBG_LOGPRINT("\t[COMPARE]Loading DWORD\n");
+		firstValue = preProcess_loadDoubleWord(inst, *pos, opt, 0);
+		if(firstValue==PLC_DEVICE_FALSE_32)
+		{
+			DBG_LOGPRINT("\t[%s] Error while picking first value.[pos = %d]\n", opt->strName, *pos);
+			return FALSE;
+		}
+		//PLC_LOG_addLog("\t[COMPARE]Loading DWORD\n");
+		secondValue = preProcess_loadDoubleWord(inst, *pos, opt, 1);
+
+		if(secondValue==PLC_DEVICE_FALSE_32)
+		{
+			DBG_LOGPRINT("\t[%s] Error while picking second value.[pos = %d]\n", opt->strName, *pos);
+			return FALSE;
+		}
+		//DBG_LOGPRINT("\t[COMPARE]Loading DWORD\n");
+	}
+	else
+	{
+		DBG_LOGPRINT("\t[%s] Error byteSize = %d\n", opt->strName, byteSize);
+		return FALSE;
+	}
+
+	//DBG_LOGPRINT("%lld | %lld , getCurrVal =  %d\n", firstValue, secondValue, getCurrValue);
+	if(functionType==FUNCTION_TYPE_LD)
+	{
+
+		if(compareFunction((void*)&firstValue, (void*)&secondValue)==TRUE)
+			ret = 1;
+		else
+			ret = 0;
+
+		return postProcess_pushNewBranchedValue(inst, pos, opt, ret);
+	}
+
+	getCurrValue = getCurrBitValue(*pos);
+
+	if(getCurrValue==PLC_DEVICE_FALSE_32)
+	{
+		//DBG_LOGSCAN(buf,"\t[%s] Error while picking current value.[pos = %d]\n", opt->strName, *pos);PLC_LOG_addLog(buf);
+		return FALSE;
+	}
+
+	if(functionType==FUNCTION_TYPE_AND){
+
+
+		if(compareFunction((void*)&firstValue, (void*)&secondValue)==TRUE)
+			ret = getCurrValue&0x01;
+		else
+			ret = getCurrValue&0x00;
+
+		return postProcess_changeCurrentBranchValue(inst, pos, opt, ret);
+	}
+	else if(functionType==FUNCTION_TYPE_OR){
+
+		if(compareFunction((void*)&firstValue, (void*)&secondValue)==TRUE)
+			ret = getCurrValue|0x01;
+		else
+			ret = getCurrValue|0x00;
+
+		return postProcess_changeCurrentBranchValue(inst, pos, opt, ret);
+
+	}
+	return FALSE;
+}
+//TODO
+//TODO
+inline uint32 inProcess_compareFloatValue(uint8 inst[], uint32* pos, PLC_Operator* opt,
+		uint32(*compareFunction)(double inFirst, double inSecond),
+		uint8 byteSize, uint8 functionType)
+{
+	uint32 ret;
+	double getFirstOperand;
+	double getSecondOperand;
+	uint32 getCurrValue;
+	//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+	//uint32 (*preProcess_loadFunction)(uint8, uint32*, PLC_Operator*, uint8);
+
+	if(byteSize==4)
+	{
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		getFirstOperand = preProcess_loadFloat(inst, pos, opt, 0);
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		getSecondOperand = preProcess_loadFloat(inst, pos, opt, 1);
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		//DBG_LOGSCAN(buf, "\t[COMPARE]Loading float: %f, %f\n", getFirstOperand, getSecondOperand);PLC_LOG_addLog(buf);
+		float inf = 1.0f/0;
+		float sinf = -1.0f/0;
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		if(getFirstOperand==-0.f ||getSecondOperand==-0.f|| getFirstOperand==inf ||getSecondOperand==sinf)
+		{
+			//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+			handleExecError(ERROR_CODE_OUT_OF_VALUE_RANGE);
+			return FALSE;
+		}
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		//DBG_LOGPRINT("\t[COMPARE]Loading float: %f, %f\n", getFirstOperand, getSecondOperand);
+	}
+	else if(byteSize==8)
+	{
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		getFirstOperand = preProcess_loadDouble(inst, pos, opt, 0);
+		getSecondOperand = preProcess_loadDouble(inst, pos, opt, 1);
+		//DBG_LOGSCAN(buf, "\t[COMPARE]Loading double: %f, %f\n", getFirstOperand, getSecondOperand);PLC_LOG_addLog(buf);
+		//DBG_LOGPRINT("\t[COMPARE]Loading double: %f, %f\n", getFirstOperand, getSecondOperand);
+		double inf = 1.0/0;
+		double sinf = -1.0/0;
+		if(getFirstOperand==-0.f ||getSecondOperand==-0.f|| getFirstOperand==inf ||getSecondOperand==sinf)
+		{
+			//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+			handleExecError(ERROR_CODE_OUT_OF_VALUE_RANGE);
+			return FALSE;
+		}
+	}
+	else
+	{
+		//printf("line %d, function %s\n", __LINE__, __FUNCTION__);
+		return FALSE;
+	}
+
+	if(functionType==FUNCTION_TYPE_LD)
+	{
+
+		if(compareFunction(getFirstOperand, getSecondOperand)==TRUE)
+			ret = 1;
+		else
+			ret = 0;
+		postProcess_pushNewBranchedValue(inst, pos, opt, ret);
+		return finalProcess_progressPosition(inst, pos, opt->nOperandPosCount);
+	}
+
+	getCurrValue = getCurrBitValue(*pos);
+	if(getCurrValue==PLC_DEVICE_FALSE_32)
+	{
+		//DBG_LOGSCAN(buf,"\t[%s] Error while picking current value.[pos = %d]\n", opt->strName, *pos);PLC_LOG_addLog(buf);
+		return FALSE;
+	}
+
+	if(functionType==FUNCTION_TYPE_AND){
+
+
+		if(compareFunction(getFirstOperand, getSecondOperand)==TRUE)
+			ret = getCurrValue&0x01;
+		else
+			ret = getCurrValue&0x00;
+
+		return postProcess_changeCurrentBranchValue(inst, pos, opt, ret);
+	}
+	else if(functionType==FUNCTION_TYPE_OR){
+
+		if(compareFunction(getFirstOperand, getSecondOperand)==TRUE)
+			ret = getCurrValue|0x01;
+		else
+			ret = getCurrValue|0x00;
+
+		return postProcess_changeCurrentBranchValue(inst, pos, opt, ret);
+
+	}
+	return FALSE;
+}
+
+inline uint8 inProcess_addInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		{
+			short* srcVal1;
+			short* srcVal2;
+			short* tarVal;
+
+			srcVal1 = (short*)src1;
+			srcVal2 = (short*)src2;
+			tarVal = (short*)tar;
+
+			*tarVal = (*srcVal1) + (*srcVal2);
+			//DBG_LOGSCAN(buf, "\t[CAL(%d)] %d(%X) = %d(%X) + %d(%X)\n", byteSize, *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);	PLC_LOG_addLog(buf);
+			//printf("\t[CAL(%d)] %d(%X) = %d(%X) + %d(%X)\n", byteSize, *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);
+			return TRUE;
+		}
+		case 4:
+		{
+			int* srcVal1;
+			int* srcVal2;
+			int* tarVal;
+
+			srcVal1 = (int*)src1;
+			srcVal2 = (int*)src2;
+			tarVal = (int*)tar;
+			//printf("\t[CAL(%d)] %d(%X) + %d(%X) = ", byteSize, *srcVal1, *srcVal1, *srcVal2, *srcVal2);
+			*tarVal = *srcVal1 + *srcVal2;
+			//printf("%d(%X)\n", *tarVal,*tarVal);
+			//DBG_LOGSCAN(buf, "\t[CAL(%d)] %d(%X) = %d(%X) + %d(%X)\n", byteSize, *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);PLC_LOG_addLog(buf);
+			//printf("\t[CAL(%d)] %d(%X) = %d(%X) + %d(%X)\n", byteSize, *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inProcess_subInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		{
+			short* srcVal1;
+			short* srcVal2;
+			short* tarVal;
+
+			srcVal1 = (short*)src1;
+			srcVal2 = (short*)src2;
+			//printf("\t[CAL(%d)] %d(%X) - %d(%X) = ", byteSize, *srcVal1, *srcVal2, *srcVal2, *srcVal2);
+			tarVal = (short*)tar;
+			//short srcV = *srcVal1;
+			*tarVal = *srcVal1 - *srcVal2;
+			//printf("%d(%X)\n", *tarVal,*tarVal);
+			//DBG_LOGSCAN(buf, "\t[CAL(%d)] %d(%X) = %d(%X) - %d(%X)\n", byteSize, *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);PLC_LOG_addLog(buf);
+
+			return TRUE;
+		}
+		case 4:
+		{
+			int* srcVal1;
+			int* srcVal2;
+			int* tarVal;
+
+			srcVal1 = (int*)src1;
+			srcVal2 = (int*)src2;
+			tarVal = (int*)tar;
+
+			*tarVal = *srcVal1 - *srcVal2;
+			//DBG_LOGSCAN(buf, "\t[CAL(%d)] %d(%X) = %d(%X) - %d(%X)\n", byteSize, *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inProcess_mltInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		{
+			short* srcVal1;
+			short* srcVal2;
+			int* tarVal;
+
+			srcVal1 = (short*)src1;
+			srcVal2 = (short*)src2;
+			tarVal = (int*)tar;
+			//printf("srcVal1 %d, srcVal2 %d\n", *srcVal1,*srcVal2);
+			*tarVal = (*srcVal1) * (*srcVal2);
+			//printf("\t[CAL(%ld)] %d(%X) = %d(%X) * %d(%X)\n", sizeof(*tarVal), *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);
+			return TRUE;
+		}
+		case 4:
+		{
+			int* srcVal1;
+			int* srcVal2;
+			long long srclong1;
+			long long srclong2;
+			long long* tarVal;
+
+			srcVal1 = (int*)src1;
+			srcVal2 = (int*)src2;
+			srclong1 =  *srcVal1 & 0x0FFFFFFFF;
+			srclong2 =  *srcVal2 & 0x0FFFFFFFF;
+			tarVal = (long long*)tar;
+			//printf("\nsrc1 %d src2 %d tar %d", *srcVal1, *srcVal2, *tarVal);
+			*tarVal = srclong1 * srclong2;
+			//printf("%lld(%llX)\n", *tarVal,*tarVal);
+			//DBG_LOGSCAN(buf, "\t[CAL(%ld)] %ld(%lX) = %ld(%lX) * %ld(%lX)\n", sizeof(*tarVal), *tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);	PLC_LOG_addLog(buf);
+			//printf("src1 %d src2 %d tar %lld exec rst %lld\n", *srcVal1, *srcVal2, *tarVal, (*srcVal1)*(*srcVal2));
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inProcess_divInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		{
+			short* srcVal1;
+			short* srcVal2;
+			short* tarVal1 = (short*)&tar[0];
+			short* tarVal2 = (short*)&tar[byteSize];
+
+			srcVal1 = (short*)src1;
+			srcVal2 = (short*)src2;
+			//tarVal = (short*)tar;
+
+			if((*srcVal2) ==0 )
+			{
+				handleExecError(ERROR_CODE_INVALID_VALUE);
+				printf("\t[DIV] unable to div by 0!\n");
+				return FALSE;
+			}
+			*tarVal1 = (*srcVal1) / (*srcVal2);
+			*tarVal2 = (*srcVal1) % (*srcVal2);
+			//memcpy(&tar[0], &tarVal[0], byteSize);
+			//memcpy(&tar[byteSize], &tarVal[1], byteSize);
+			//DBG_LOGSCAN(buf, "\t[CAL] %d(%X) = %d(%X) / %d(%X)\n",*tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);PLC_LOG_addLog(buf);
+
+			//printf("\t[CAL] %d(%x) / %d(%x) = %d(%X) / %d(%X)\n",tarVal[0], tarVal[0], tarVal[1], tarVal[1], *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);
+			return TRUE;
+		}
+		case 4:
+		{
+			int* srcVal1;
+			int* srcVal2;
+			int* tarVal1 = (int*)&tar[0];
+			int* tarVal2 = (int*)&tar[byteSize];
+
+			srcVal1 = (int*)src1;
+			srcVal2 = (int*)src2;
+			//tarVal = (int*)tar;
+
+			if((*srcVal2) ==0 )
+			{
+				handleExecError(ERROR_CODE_INVALID_VALUE);
+				printf("\t[DIV] unable to div by 0!\n");
+				return FALSE;
+			}
+			*tarVal1 = (*srcVal1) / (*srcVal2);
+			*tarVal2 = (*srcVal1) % (*srcVal2);
+			//memcpy(&tar[0], &tarVal[0], byteSize);
+			//memcpy(&tar[byteSize], &tarVal[1], byteSize);
+			//DBG_LOGSCAN(buf, "\t[CAL] %d(%X) = %d(%X) / %d(%X)\n",*tarVal ,*tarVal , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);PLC_LOG_addLog(buf);
+			//DBG_LOGPRINT("\t[CAL] %d(%X)|%d(%X) = %d(%X) / %d(%X)\n",*tarVal1,*tarVal1 ,*tarVal2 ,*tarVal2 , *srcVal1 ,*srcVal1 , *srcVal2, *srcVal2);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+
+inline uint8 inProcess_addBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	if(byteSize ==4)
+	{
+		uint32 srcBin1;
+		uint32 srcBin2;
+		//printf("src1 : 0x%X, src2 : 0x%X\n", *(int*)src1, *(int*)src2);
+		uint32 dstBin = 0;
+		if(!inprocess_convertBCDToBin(&srcBin1, src1, byteSize))
+		{
+			//printf("src1 converting [BCD->Bin] failed!\n");
+			return FALSE;
+		}
+		if(!inprocess_convertBCDToBin(&srcBin2, src2, byteSize))
+		{
+			//printf("src2 converting [BCD->Bin] failed!\n");
+			return FALSE;
+		}
+		if(!inProcess_addInt((uint8*)&dstBin, (uint8*)&srcBin1, (uint8*)&srcBin2, byteSize))
+		{
+			//printf("add int failed!\n");
+			return FALSE;
+		}
+		if(!inprocess_convertBinToBCD(tar, &dstBin, byteSize))
+		{
+			//printf("dst converting [BCD<-Bin] failed!\n");
+			return FALSE;
+		}
+	}else if(byteSize ==2)
+	{
+		uint16 srcBin1;
+		uint16 srcBin2;
+		//printf("src1 : 0x%X, src2 : 0x%X\n", *(short*)src1, *(short*)src2);
+		uint16 dstBin = 0;
+		if(!inprocess_convertBCDToBin(&srcBin1, src1, byteSize))
+		{
+			//printf("src1 converting [BCD->Bin] failed!\n");
+			return FALSE;
+		}
+		if(!inprocess_convertBCDToBin(&srcBin2, src2, byteSize))
+		{
+			//printf("src2 converting [BCD->Bin] failed!\n");
+			return FALSE;
+		}
+		if(!inProcess_addInt((uint8*)&dstBin, (uint8*)&srcBin1, (uint8*)&srcBin2, byteSize))
+		{
+			//printf("add int failed!\n");
+			return FALSE;
+		}
+		if(!inprocess_convertBinToBCD(tar, &dstBin, byteSize))
+		{
+			//printf("dst converting [BCD<-Bin] failed!\n");
+			return FALSE;
+		}
+
+	}
+	return TRUE;
+}
+inline uint8 inProcess_subBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	uint32 srcBin1;
+	uint32 srcBin2;
+	uint32 dstBin = 0;
+
+	if(!inprocess_convertBCDToBin(&srcBin1, src1, byteSize))
+		return FALSE;
+	if(!inprocess_convertBCDToBin(&srcBin2, src2, byteSize))
+		return FALSE;
+
+	if(srcBin1<srcBin2)
+	{
+		if(byteSize==2)
+			srcBin1+=10000;
+		else if(byteSize==4)
+			srcBin1+=100000000;
+	}
+	//printf("BCD SUB %d - %d\n", srcBin1, srcBin2);
+	if(!inProcess_subInt((uint8*)&dstBin, (uint8*)&srcBin1, (uint8*)&srcBin2, byteSize))
+		return FALSE;
+	if(!inprocess_convertBinToBCD(tar, &dstBin, byteSize))
+		return FALSE;
+	return TRUE;
+}
+inline uint8 inProcess_mltBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	uint32 srcBin1=0;
+	uint32 srcBin2=0;
+	long long dstBin = 0;
+	unsigned long long dstBCDLong;
+	//uint8 dstBCD[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+	if(!inprocess_convertBCDToBin(&srcBin1, src1, byteSize))
+		return FALSE;
+	if(!inprocess_convertBCDToBin(&srcBin2, src2, byteSize))
+		return FALSE;
+	//printf("[byteSize = %d]bin1 : %ld * bin2 : %ld = ", byteSize, srcBin1, srcBin2);
+	if(!inProcess_mltInt((uint8*)&dstBin, (uint8*)&srcBin1, (uint8*)&srcBin2, byteSize))
+		return FALSE;
+	//printf("dstBin : %lld \n", dstBin);
+	if(!inprocess_convertBinToBCD(&dstBCDLong, &dstBin, 2*byteSize))
+		return FALSE;
+	//printf("tar1 (size = %d): %llX \n", 2*byteSize, dstBCDLong);
+	memcpy(tar, &dstBCDLong, 2*byteSize);
+	//printf("tar2 (size = %d): %llX \n", 2*byteSize, dstBCDLong);
+	return TRUE;
+}
+inline uint8 inProcess_divBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	uint32 srcBin1=0;
+	uint32 srcBin2=0;
+	long long dstBin = 0;
+	//unsigned long long dstBCDLong;
+	uint32 binRet[2], BCDRet[2];
+
+	//uint8 dstBCD[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+	if(!inprocess_convertBCDToBin(&srcBin1, src1, byteSize))
+		return FALSE;
+	if(!inprocess_convertBCDToBin(&srcBin2, src2, byteSize))
+		return FALSE;
+
+	if(!inProcess_divInt((uint8*)&dstBin, (uint8*)&srcBin1, (uint8*)&srcBin2, byteSize))
+		return FALSE;
+	printf("[byteSize = %d]bin1 : %d / bin2 : %d = 0x%08llX\n", byteSize, srcBin1, srcBin2, dstBin);
+	if( byteSize ==2 )
+	{
+		binRet[0] = dstBin & 0x0FFFF;
+		binRet[1] = (dstBin>>16) & 0x0FFFF;
+	}
+	else if( byteSize == 4 ){
+		binRet[0] = dstBin & 0x0FFFFFFFF;
+		binRet[1] = (dstBin>>32) & 0x0FFFFFFFF;
+	}
+	printf("binRet d= %d %d [%04X%04X]\n", binRet[0], binRet[1], binRet[1],  binRet[0]);
+	if(!inprocess_convertBinToBCD(&BCDRet[0], &binRet[0], byteSize))
+		return FALSE;
+	if(!inprocess_convertBinToBCD(&BCDRet[1], &binRet[1], byteSize))
+		return FALSE;
+	printf("BCDRet X= %X %X\n", BCDRet[0], BCDRet[1]);
+
+	memcpy(&tar[0], &BCDRet[0], byteSize);
+	memcpy(&tar[byteSize], &BCDRet[1], byteSize);
+
+	//printf("tar (size = %d): %X %X\n", 2*byteSize, BCDRet[0], BCDRet[1]);
+	return TRUE;
+}
+
+inline uint8 inProcess_addFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		case 4:
+		{
+			float *srcVal1;
+			float *srcVal2;
+			float *tarVal;
+
+			srcVal1 =  (float*)src1;
+			srcVal2 =  (float*)src2;
+			//printf(buf, "\t[CAL] %.f + %.f",*srcVal1 , *srcVal2);
+			tarVal = (float*)tar;
+			*tarVal = (*srcVal1) + (*srcVal2);
+			//printf(buf, "%.f\n", *tarVal);
+			DBG_LOGPRINT("\t[CAL] %.f = %.f + %.f\n",*tarVal , *srcVal1 , *srcVal2);
+			//PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		case 8:
+		{
+
+			double* srcVal1;
+			double* srcVal2;
+			double* tarVal;
+
+			srcVal1 = (double*)src1;
+			srcVal2 = (double*)src2;
+			//printf(buf, "\t[CAL] %.f + %.f",*srcVal1 , *srcVal2);
+			tarVal = (double*)tar;
+			*tarVal = (*srcVal1) + (*srcVal2);
+			//DBG_LOGSCAN(buf, "\t[CAL] %.f = %.f + %.f\n",*tarVal , *srcVal1 , *srcVal2);	PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inProcess_subFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		case 4:
+		{
+			float* srcVal1;
+			float* srcVal2;
+			float* tarVal;
+
+			srcVal1 = (float*)src1;
+			srcVal2 = (float*)src2;
+			tarVal = (float*)tar;
+
+			*tarVal = *srcVal1 - *srcVal2;
+			//DBG_LOGSCAN(buf, "\t[CAL] %.f = %.f - %.f\n",*tarVal , *srcVal1 , *srcVal2);PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		case 8:
+		{
+			double* srcVal1;
+			double* srcVal2;
+			double* tarVal;
+
+			srcVal1 = (double*)src1;
+			srcVal2 = (double*)src2;
+			tarVal = (double*)tar;
+
+			*tarVal = *srcVal1 - *srcVal2;
+			//DBG_LOGSCAN(buf, "\t[CAL] %.f = %.f - %.f\n",*tarVal , *srcVal1 , *srcVal2);PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inProcess_mltFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		case 4:
+		{
+			float* srcVal1;
+			float* srcVal2;
+			float* tarVal;
+
+			srcVal1 = (float*)src1;
+			srcVal2 = (float*)src2;
+			tarVal = (float*)tar;
+
+			*tarVal = (*srcVal1) * (*srcVal2);
+			//DBG_LOGSCAN(buf, "\t[CAL] %.f = %.f * %.f\n",*tarVal , *srcVal1 , *srcVal2);PLC_LOG_addLog(buf);
+			return TRUE;
+		}case 8:
+		{
+			double* srcVal1;
+			double* srcVal2;
+			double* tarVal;
+
+			srcVal1 = (double*)src1;
+			srcVal2 = (double*)src2;
+			tarVal = (double*)tar;
+
+			*tarVal = (*srcVal1) * (*srcVal2);
+			//DBG_LOGSCAN(buf, "\t[CAL] %.f = %.f * %.f\n",*tarVal , *srcVal1 , *srcVal2);PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inProcess_divFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize){
+	switch(byteSize){
+		case 2:
+		case 4:
+		{
+			float* srcVal1;
+			float* srcVal2;
+			float* tarVal;
+
+			srcVal1 = (float*)src1;
+			srcVal2 = (float*)src2;
+			tarVal = (float*)tar;
+			if((*srcVal2) ==0.f )
+			{
+				handleExecError(ERROR_CODE_INVALID_VALUE);
+				return FALSE;
+			}
+
+			*tarVal = (*srcVal1) / (*srcVal2);
+			//DBG_LOGPRINT("\t[CAL] %.f = %.f / %.f\n",*tarVal , *srcVal1 , *srcVal2);
+			return TRUE;
+		}
+		case 8:
+		{
+			double* srcVal1;
+			double* srcVal2;
+			double* tarVal;
+
+			srcVal1 = (double*)src1;
+			srcVal2 = (double*)src2;
+			tarVal = (double*)tar;
+			if((*srcVal2) ==0.f)
+			{
+				handleExecError(ERROR_CODE_INVALID_VALUE);
+				return FALSE;
+			}
+
+			*tarVal = (*srcVal1) / (*srcVal2);
+			//DBG_LOGSCAN(buf, "\t[CAL] %.f = %.f / %.f\n",*tarVal , *srcVal1 , *srcVal2);PLC_LOG_addLog(buf);
+			return TRUE;
+		}
+		default:
+		{
+			return FALSE;
+		}
+	}
+}
+inline uint8 inprocess_convertBinToBCD(void* dstBCD, void* srcBin, uint8 byteSize){
+	if(byteSize==2)
+	{
+		uint16* dst = dstBCD;
+		uint16* src = srcBin;
+
+		*dst = (*src)%10 + (((*src)/10)%10<<4) + (((*src)/100)%10<<8) + (((*src)/1000)%10<<12);
+		if(*dst>0x9999)
+		{
+			(*dst)-=0x10000;
+		}
+		//DBG_LOGSCAN(buf, "\t[B>BCD out(%d)] dstBCD = [X]%X, srcBin= [D]%d\n", byteSize, *dst, *src);PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==4)
+	{
+		uint32* dst = (uint32*)dstBCD;
+		uint32* src =  (uint32*)srcBin;
+
+		*dst = (*src)%10 + (((*src)/10)%10<<4) + (((*src)/100)%10<<8) + (((*src)/1000)%10<<12)
+				+  (((*src)/10000)%10<<16) + (((*src)/100000)%10<<20) + (((*src)/1000000)%10<<24) + (((*src)/10000000)%10<<28);
+		if((*dst)>0x99999999 )
+				{
+					(*dst)-=0x100000000;
+				}
+		//DBG_LOGPRINT("\t[DBCD out(%d)] dstBCD = [X]%X, srcBin= [D]%d\n", byteSize, *dst, *src);
+		//DBG_LOGSCAN(buf, "\t[B>BCD out(%d)] dstBCD = [X]%X, srcBin= [D]%d\n", byteSize, *dst, *src);	PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==8)
+	{
+		long long* dst = (long long*)dstBCD;
+		long long* src =  (long long*)srcBin;
+		long long dstVal=0;
+		//printf("%src = %lld\n", *src);
+		if(*dst>0x9999999999999999 )
+		{
+			//printf( "dst value = %d is out of range!\n", *dst);
+			//handleExecError(ERROR_CODE_INVALID_VALUE);
+			(*dst)-=(long long)0x10000000000000000;
+		}
+		//printf("srcBin %lld\n", *src);
+		//DBG_LOGPRINT("srcX %X \n", (((*src)/100000000)%10<<32) );
+		dstVal = 		(*src)%10 + (((*src)/10)%10<<4) + (((*src)/100)%10<<8) + (((*src)/1000)%10<<12)
+				+  (((*src)/10000)%10<<16) + (((*src)/100000)%10<<20) + (((*src)/1000000)%10<<24) + (((*src)/10000000)%10<<28)
+				+  (((*src)/100000000)%10<<32) + (((*src)/1000000000)%10<<36) + (((*src)/10000000000)%10<<40) + (((*src)/100000000000)%10<<44)
+				+  (((*src)/1000000000000)%10<<48) + (((*src)/10000000000000)%10<<52) + (((*src)/100000000000000)%10<<56) + (((*src)/1000000000000000)%10<<60);
+		//printf("dstVal %llX, size of type unsigned long int : %d\n", dstVal, sizeof(unsigned long int));
+		*dst = dstVal;
+		//printf("dst %llX, size of type unsigned long int : %d\n", *dst, sizeof(unsigned long int));
+		//DBG_LOGSCAN(buf, "\t[B>BCD out(%d)] dstBCD = [X]%lX, srcBin= [D]%d\n", byteSize, dst[0]+0x100000000*dst[1], *src);		PLC_LOG_addLog(buf);
+	}
+	return TRUE;
+
+}
+inline void inprocess_convertBinToFloat(void* dstFloat, void* srcBin, uint8 byteSize){
+	if(byteSize==2)
+	{
+		float* dst = (float*)dstFloat;
+		short* src = srcBin;
+		*dst = *src;
+		//DBG_LOGSCAN(buf, "\t[B>F out] dstFloat = [F]%F, srcBin= [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==4)
+	{
+		float* dst = (float*)dstFloat;
+		int* src =  (int*)srcBin;
+		*dst = *src;
+		//DBG_LOGSCAN(buf, "\t[B>F out] dstFloat = [F]%F, srcBin= [X]%X\n", *dst, *src);	PLC_LOG_addLog(buf);
+	}
+	return;
+
+}
+inline void inprocess_convertFloatToBin(void* dstBin, void* srcFloat, uint8 byteSize){
+	if(byteSize==2)
+	{
+		short* dst = (short*)dstBin;
+		float* src = (float*)srcFloat;
+		//DBG_LOGPRINT("\t] Load dst [F]%F[X]%X, src= [f]%f\n", (float)*dst, (int)*dst, (float)*src);
+		*dst = *src;//+0.5;
+
+		if(0.5f <= (*src-*dst))
+		{
+			*dst = *dst+1;
+		}
+		//DBG_LOGPRINT("\t[F>B out] dstFloat = [F]%F[X]%X, srcBin= [f]%f\n", (float)*dst, (int)*dst, (float)*src);
+	}
+	else if(byteSize==4)
+	{
+		int* dst = (int*)dstBin;
+		float* src =  (float*)srcFloat;
+		*dst = (int)*src;//+0.5;
+		//DBG_LOGPRINT("\t[F > B Load] dst(%d), src(%d)\n", *dst, *src);
+		if(0.5f <= *src-*dst)
+		{
+
+			*dst = *dst+1;
+			//DBG_LOGPRINT("\t[F>B out] dstFloat = [F]%F[X]%X, srcBin= [X]%X\n", (float)*dst, (int)*dst, (short)*src);
+		}
+
+	}
+	return;
+}
+inline void inprocess_convertBinToDouble(void* dstDouble, void* srcBin, uint8 byteSize){
+
+	if(byteSize==2)
+	{
+		double* dst = (double*)dstDouble;
+		short* src = srcBin;
+		*dst = *src;
+		if(0.5f <= *src-*dst)
+			*dst = *dst+1;
+		//DBG_LOGSCAN(buf, "\t[B>F out] dstdouble = [F]%F, srcBin= [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==4)
+	{
+		double* dst = (double*)dstDouble;
+		int* src =  (int*)srcBin;
+		*dst = *src;
+		if(0.5f <= *src-*dst)
+			*dst = *dst+1;
+		//DBG_LOGSCAN(buf, "\t[B>F out] dstdouble = [F]%F, srcBin= [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+	return;
+
+}
+inline void inprocess_convertDoubleToBin(void* dstBin, void* srcDouble, uint8 byteSize){
+	if(byteSize==2)
+	{
+		short* dst = (short*)dstBin;
+		double* src = (double*)srcDouble;
+		*dst = *src;
+		//DBG_LOGSCAN(buf, "\t[F>B out] dstdouble = [F]%F, srcBin= [X]%X\n", (float)*dst, (short)*src);		PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==4)
+	{
+		int* dst = (int*)dstBin;
+		double* src =  (double*)srcDouble;
+		*dst = *src;
+		//DBG_LOGSCAN(buf, "\t[F>B out] dstdouble = [F]%F, srcBin= [X]%X\n", (float)*dst, (short)*src);		PLC_LOG_addLog(buf);
+	}
+	return;
+}
+
+inline uint8 inprocess_convertBCDToBin(void* dstBin, void* srcBCD, uint8 byteSize){
+	/*uint8* dstprint = dstBin;
+	uint8* srcprint = srcBCD;
+	printf("start : dst %02X %02X %02X %02X  || src %02X %02X %02X %02X\n",
+				dstprint[0], dstprint[1], dstprint[2], dstprint[3],
+				srcprint[0], srcprint[1], srcprint[2], srcprint[3]
+				);*/
+	if(byteSize==2)
+	{
+		short* dst = (short*)dstBin;
+		short* src = (short*)srcBCD;
+		uint16 testSRC = *(uint16*)srcBCD;
+		//DBG_LOGPRINT("src to conversion : 0x%04X\n", testSRC);
+		int i;
+		for(i=0;i<4;i++)
+		{
+			if((testSRC&0x0F)>9)
+			{
+				DBG_LOGPRINT("0x%04X is not a BCD form :%d[%d]!\n", testSRC,(testSRC>>(i*4))&0x0F, i);
+				handleExecError(ERROR_CODE_INVALID_VALUE);
+				return FALSE;
+			}
+			testSRC = testSRC>>4;
+		}
+
+		*dst = ((*src>>0)&0x0F)+((*src>>4)&0x0F)*10+((*src>>8)&0x0F)*100+((*src>>12)&0x0F)*1000;
+		//DBG_LOGSCAN(buf, "\t[BCD>Bin out] dstBin = [D]%d, srcBCD = [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+		//printf("\t[BCD>Bin out[2]] dstBin = [D]%d <== srcBCD = [X]%X\n", *dst, *src);
+	}
+	else if(byteSize==4)
+	{
+		int* dst = (int*)dstBin;
+		uint32* src =  (uint32*)srcBCD;
+		int testSRC = *src;
+		//printf("0x%08X 0x%08X 0x%08X\n",*dst, *src, testSRC);
+		int i;
+		for(i=0;i<8;i++)
+		{
+			//if(((testSRC>>(i*4))&0x0F)>9)
+			if((testSRC&0x0F)>9)
+			{
+				DBG_LOGPRINT("0x%08X is not a BCD form :%d[%d]!\n", testSRC,(testSRC>>(i*4))&0x0F, i);
+				handleExecError(ERROR_CODE_INVALID_VALUE);
+				return FALSE;
+			}
+			testSRC = testSRC>>4;
+		}
+		*dst = ((*src>>0)&0x0F) + ((*src>>4)&0x0F)*10 + ((*src>>8)&0x0F)*100 + ((*src>>12)&0x0F)*1000
+				+  ((*src>>16)&0x0F)*10000 + ((*src>>20)&0x0F)*100000 + ((*src>>24)&0x0F)*1000000 + ((*src>>28)&0x0F)*10000000;
+		//DBG_LOGSCAN(buf, "\t[BCD>Bin out] dstBin = [D]%d, srcBCD = [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+		//printf("\t[BCD>Bin out[4]] dstBin = [D]%d, srcBCD = [X]%X\n", *dst, *src);
+	}
+	/*printf("end : dst %02X %02X %02X %02X  || src %02X %02X %02X %02X\n",
+			dstprint[0], dstprint[1], dstprint[2], dstprint[3],
+			srcprint[0], srcprint[1], srcprint[2], srcprint[3]
+			);*/
+	return TRUE;
+}
+inline uint32 binaryToGray(uint32 num)
+{
+        return (num >> 1) ^ num;
+}
+inline uint32 grayToBinary(uint32 num)
+{
+    unsigned long long mask;
+    for (mask = num >> 1; mask != 0; mask = mask >> 1)
+    {
+        num = num ^ mask;
+    }
+    return num;
+}
+
+inline void  inprocess_convertGrayToBin(void* dstBin, void* srcGray, uint8 byteSize){
+	if(byteSize==2)
+	{
+		uint16* dst = (uint16*)dstBin;
+		uint16* src = (uint16*)srcGray;
+		*dst = grayToBinary(*src);
+		//DBG_LOGSCAN(buf, "\t[Gray>Bin out] dstBin = [X]%X, srcBCD = [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==4)
+	{
+		uint32* dst = (uint32*)dstBin;
+		uint32* src =  (uint32*)srcGray;
+		*dst = grayToBinary(*src);
+		//DBG_LOGSCAN(buf, "\t[Gray>Bin out] dstBin = [X]%X, srcBCD = [X]%X\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+
+	return;
+}
+
+inline void  inprocess_convertBinToGray(void* dstGray, void* srcBin, uint8 byteSize){
+	if(byteSize==2)
+	{
+		uint16* dst = dstGray;
+		uint16* src = srcBin;
+		*dst = binaryToGray(*src);
+		//DBG_LOGSCAN(buf, "\t[B>Gray out] dstBCD = [X]%X, srcBin= [X]%d\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+	else if(byteSize==4)
+	{
+		uint32* dst = (uint32*)dstGray;
+		uint32* src =  (uint32*)srcBin;
+		*dst = binaryToGray(*src);
+		//DBG_LOGSCAN(buf, "\t[B>Gray out] dstBCD = [X]%X, srcBin= [X]%d\n", *dst, *src);		PLC_LOG_addLog(buf);
+	}
+	return;
+
+}
+
+inline void inProcess_rewindPulseDeltaStack(){
+
+	dev.nCurrPulseStackPosision=0;
+	dev.nCurrDeltaStackPosision=0;
+	dev.device_block_stack.size = 0;
+}
+inline uint32 inProcess_isEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	short* in1 = (short*) inFirst;
+	short* in2 = (short*) inSecond;
+	uint32 ret = (*in1==*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);
+	return ret;
+
+}
+inline uint32 inProcess_isNotEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	short* in1 = (short*) inFirst;
+	short* in2 = (short*) inSecond;
+	uint32 ret = (*in1!=*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//printf("\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);
+	return ret;
+}
+inline uint32 inProcess_isGreaterThan(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	short* in1 = (short*) inFirst;
+	short* in2 = (short*) inSecond;
+	uint32 ret = (*in1>*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);
+	return ret;
+}
+inline uint32 inProcess_isLesserThan(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	short* in1 = (short*) inFirst;
+	short* in2 = (short*) inSecond;
+	uint32 ret = (*in1<*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//printf("\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);
+	return ret;
+}
+inline uint32 inProcess_isGreaterOrEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	short* in1 = (short*) inFirst;
+	short* in2 = (short*) inSecond;
+	uint32 ret = (*in1>=*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//printf("\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);
+	return ret;
+}
+inline uint32 inProcess_isLesserOrEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	short* in1 = (short*) inFirst;
+	short* in2 = (short*) inSecond;
+	uint32 ret = (*in1<=*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//printf("\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);
+	return ret;
+}
+///////////////////
+inline uint32 inProcess_isDWordEqual(void* inFirst, void* inSecond){
+
+	int* in1 = (int*) inFirst;
+	int* in2 = (int*) inSecond;
+	uint32 ret = (*in1==*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[%s] ret = %d[%d:%d]\n",__FUNCTION__, ret, *in1, *in2);
+	return ret;
+
+}
+inline uint32 inProcess_isDWordNotEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	int* in1 = (int*) inFirst;
+	int* in2 = (int*) inSecond;
+	uint32 ret = (*in1!=*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[%s] ret = %d[%d:%d]\n",__FUNCTION__, ret, *in1, *in2);
+	return ret;
+
+}
+inline uint32 inProcess_isDWordGreaterThan(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	int* in1 = (int*) inFirst;
+	int* in2 = (int*) inSecond;
+	uint32 ret = (*in1>*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[%s] ret = %d[%d:%d]\n",__FUNCTION__, ret, *in1, *in2);
+	return ret;
+
+}
+inline uint32 inProcess_isDWordLesserThan(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	int* in1 = (int*) inFirst;
+	int* in2 = (int*) inSecond;
+	uint32 ret = (*in1<*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[%s] ret = %d[%d:%d]\n",__FUNCTION__, ret, *in1, *in2);
+	return ret;
+
+}
+inline uint32 inProcess_isDWordGreaterOrEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	int* in1 = (int*) inFirst;
+	int* in2 = (int*) inSecond;
+	uint32 ret = (*in1>=*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[%s] ret = %d[%d:%d]\n",__FUNCTION__, ret, *in1, *in2);
+	return ret;
+
+}
+inline uint32 inProcess_isDWordLesserOrEqual(void* inFirst, void* inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	int* in1 = (int*) inFirst;
+	int* in2 = (int*) inSecond;
+	uint32 ret = (*in1<=*in2)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare] ret = %d[%d:%d]\n", ret, *in1, *in2);	PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[%s] ret = %d[%d:%d]\n",__FUNCTION__, ret, *in1, *in2);
+	return ret;
+}
+///////////////////
+inline uint32 inProcess_isDoubleEqual(double inFirst, double inSecond){
+
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	uint32 ret = (inFirst==inSecond)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare1] ret = %d[%f = %X : %f = %X]\n", ret, * (double*) inFirst, * (double*) inFirst, *(double*) inSecond, *(double*) inSecond);PLC_LOG_addLog(buf);
+	//DBG_LOGSCAN(buf, "\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);PLC_LOG_addLog(buf);
+	//DBG_LOGPRINT("\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);
+	return ret;
+
+}
+inline uint32 inProcess_isDoubleNotEqual(double inFirst, double inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	uint32 ret = (inFirst!=inSecond)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare1] ret = %d[%f = %X : %f = %X]\n", ret, * (double*) inFirst, * (double*) inFirst, *(double*) inSecond, *(double*) inSecond);PLC_LOG_addLog(buf);
+	//DBG_LOGSCAN(buf, "\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);PLC_LOG_addLog(buf);
+	return ret;
+}
+inline uint32 inProcess_isDoubleGreaterThan(double inFirst, double inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	uint32 ret = (inFirst>inSecond)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);PLC_LOG_addLog(buf);
+	return ret;
+}
+inline uint32 inProcess_isDoubleLesserThan(double inFirst, double inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	uint32 ret = (inFirst<inSecond)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);PLC_LOG_addLog(buf);
+	return ret;
+
+	//return PLC_DEVICE_FALSE_32;
+}
+inline uint32 inProcess_isDoubleGreaterOrEqual(double inFirst, double inSecond){
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	uint32 ret = (inFirst>=inSecond)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);PLC_LOG_addLog(buf);
+	return ret;
+}
+inline uint32 inProcess_isDoubleLesserOrEqual(double inFirst, double inSecond){
+
+	//DBG_LOGPRINT("\t[%s]start\n", __FUNCTION__);
+	uint32 ret = (inFirst<=inSecond)? TRUE:FALSE;
+	//DBG_LOGSCAN(buf, "\t[compare2] ret = %d[%f : %f]\n", ret, inFirst, inSecond);PLC_LOG_addLog(buf);
+	return ret;
+}
+
+inline uint8 inProcess_transperBlock(uint8 inst[], uint32 pos, uint8 wordSize, uint8 F_OR_B){
+	uint8* dstOpnd = inProcess_getIndexedOperand(inst, pos, 1);
+	uint8* srcOpnd = inProcess_getIndexedOperand(inst, pos, 0);
+	uint8* thirdOpnd = inProcess_getIndexedOperand(inst, pos, 2);
+
+	uint16 srcLength = PLC_DEVICE_getDeviceWordValue(thirdOpnd);
+	if(srcLength ==0xFFFF)
+	{
+		DBG_LOGPRINT("[Error inProcess_transperBlock] invalid 3rd operand is loaded!\n");
+		return FALSE;
+	}
+
+		//in
+
+	if(srcOpnd==NULL || dstOpnd == NULL)
+	{
+		DBG_LOGPRINT("[Error inProcess_transperBlock]Null operand is loaded!\n");
+		return FALSE;
+	}
+	if(!PLC_DEVICE_copyDeviceBLK_new(dstOpnd,srcOpnd,srcLength, wordSize, F_OR_B))
+	{
+		DBG_LOGPRINT("[Error inProcess_transperBlock] PLC_DEVICE_copyDeviceBLK_new returns Error!\n");
+		return FALSE;
+	}
+	return TRUE;
+}
+///////////////////
+
+inline uint8 inProcess_addString(uint8* target, uint8* source1, uint8* source2){
+	uint16 src1Length = 0;
+	uint16 src2Length = 0;
+	uint16 MAX_STR_LENGTH = 16383;
+	src1Length = strlen((char*)source1);
+	src2Length = strlen((char*)source2);
+	//DBG_LOGSCAN(buf, "\t[SET STR] src1Length : %d, src2Length : %d\n", src1Length,src2Length);
+	if(src1Length+src2Length>MAX_STR_LENGTH)
+	{
+		//DBG_LOGSCAN(buf, "\t[ERROR] src1Length+src2Length>MAX_STR_LENGTH:%d + %d = %d\n", src1Length,src2Length,MAX_STR_LENGTH);		PLC_LOG_addLog(buf);
+		return FALSE;
+	}
+	if( target + src1Length+src2Length> source1 && target< source1)
+	{
+		//DBG_LOGSCAN(buf, "\t[ERROR] target + src1Length+src2Length> source1 && target< source1\n");		PLC_LOG_addLog(buf);
+		return FALSE;
+	}
+	if( target + src1Length+src2Length> source2 && target< source2)
+	{
+		//DBG_LOGSCAN(buf, "\t[ERROR] target + src1Length+src2Length> source2 && target< source2\n");		PLC_LOG_addLog(buf);
+		return FALSE;
+	}
+	strcpy((char*)target, (char*)source1);
+	strcat((char*)target, (char*)source2);
+	//DBG_LOGSCAN(buf, "\t[SET STR] TAR:%s\n", target);	PLC_LOG_addLog(buf);
+	return TRUE;
+
+}
+inline uint8* inProcess_getIndexedOperand(uint8 inst[], uint32 pos, uint8 opndIdx){
+
+	uint32 currPos = pos+OPERATOR_LENGTH;
+	int idx;
+	for(idx = 0; idx<opndIdx; idx++)
+	{
+		currPos += OPND_DICT_ByteSize(&inst[currPos]);
+	}
+	return &inst[currPos];
+
+}
+inline uint8* inProcess_getNextOperand(uint8 inst[], uint32 *pos){
+
+	//uint32 currPos = pos+OPERATOR_LENGTH;
+	//int idx;
+	//for(idx = 0; idx<opndIdx; idx++)
+	//{
+	uint8* rst = &inst[*pos];
+	(*pos) += OPND_DICT_ByteSize(&inst[*pos]);
+	//currPos += OPND_DICT_ByteSize(&inst[currPos]);
+	//}
+	return rst;
+}
+inline uint32 inProcess_outTC(uint8 isTimer, uint16 addr, uint16 setValue, uint8 timerMode, uint8 isPulse, uint32* pos){
+	//printf("%s : %d, pos : %d\n", __FUNCTION__,__LINE__, *pos);
+	uint16 fastValue = preProcess_pick(*pos);
+	//printf("%s : %d\n", __FUNCTION__,__LINE__);
+	uint16 currValue = getCurrBitValue(*pos);
+	//printf("%s : %d\n", __FUNCTION__,__LINE__);
+	//printf("%s %d\n",__FUNCTION__, __LINE__);
+	if(isPulse && !inProcess_detectRaisingEdge(currValue, fastValue))
+	{
+		return TRUE;
+	}
+	//printf("%s %d\n",__FUNCTION__, __LINE__);
+	//printf("%s : %d\n", __FUNCTION__,__LINE__);
+	if(!currValue)
+		return TRUE;
+	//printf("%s %d\n",__FUNCTION__, __LINE__);
+	//printf("%s : %d\n", __FUNCTION__,__LINE__);
+	if(isTimer)
+	{
+		//printf("%s : %d\n", __FUNCTION__,__LINE__);
+		if(addr>=OPERAND_SIZE_T)
+		{
+			//printf("%s : %d\n", __FUNCTION__,__LINE__);
+			return PLC_DEVICE_FALSE_32;
+		}
+		//printf("%s : %d\n", __FUNCTION__,__LINE__);
+		PLC_Register_setTimer(addr, timerMode, setValue);
+		//printf("%s : %d\n", __FUNCTION__,__LINE__);
+	}
+	else
+	{
+		//printf("%s : %d\n", __FUNCTION__,__LINE__);
+		if(addr>=OPERAND_SIZE_C)
+		{
+			return PLC_DEVICE_FALSE_32;
+		}
+		PLC_Register_setCount(addr, setValue);
+	}
+	//printf("%s : %d\n", __FUNCTION__,__LINE__);
+	return TRUE;
+}
+
+inline void inProcess_outC(uint16 trigger, uint16 countIdx, uint16 setValue){
+	//DBG_LOGPRINT("OUT_C input = %d(trigger) %d(countIdx) %d(setValue)\n", trigger, countIdx, setValue);
+	if(trigger)
+	{
+//#define COUNT_LOG
+		//if(PLC_Register_getCount(countIdx, VALUE_TYPE_ISON)==TRUE)
+		//{
+#ifdef COUNT_LOG
+			DBG_LOGPRINT("OUT_C is on!\n");
+#endif
+			if(PLC_Register_getCount(countIdx, VALUE_TYPE_RET)!=TRUE)
+			{
+#ifdef COUNT_LOG
+				DBG_LOGPRINT("OUT_C is not true!\n");
+#endif
+				if(PLC_Register_getCount(countIdx, VALUE_TYPE_CURR)<setValue)
+				{
+#ifdef COUNT_LOG
+					DBG_LOGPRINT("OUT_C is not reached yet!([C%d]%d : %d)\n",countIdx, PLC_Register_getCount(countIdx, VALUE_TYPE_CURR),setValue);
+#endif
+					/*DBG_LOGSCAN(buf, "\t[%s] : increase C%d : %d->%d\n", __FUNCTION__, countIdx,
+							PLC_Register_getCount(countIdx, VALUE_TYPE_CURR), PLC_Register_getCount(countIdx, VALUE_TYPE_CURR)+1);PLC_LOG_addLog(buf);
+							*/
+					if(!PLC_Register_increaseCount(countIdx, setValue))
+					{
+						DBG_LOGPRINT("OUT_C increasing failed!\n");
+					}
+				}
+				else
+				{
+#ifdef COUNT_LOG
+					DBG_LOGPRINT("OUT_C is reached !([C%d]%d : %d)\n",countIdx, PLC_Register_getCount(countIdx, VALUE_TYPE_CURR),setValue);
+#endif
+					/*DBG_LOGSCAN(buf, "\t[%s] : Set C%d true .\n", __FUNCTION__, countIdx);PLC_LOG_addLog(buf);*/
+					PLC_Register_setCValue(countIdx, VALUE_TYPE_RET, TRUE);
+					PLC_Register_setCValue(countIdx, VALUE_TYPE_CURR, 0);
+				}
+			}
+			else
+			{
+				//DBG_LOGSCAN(buf, "\t[%s] : Keeping C%d value as true .\n", __FUNCTION__, countIdx);PLC_LOG_addLog(buf);
+			}
+			//return postProcess_nop(inst, pos, opt);
+		//}
+		/*else{
+			DBG_LOGPRINT("OUT_C is turnning on!\n");
+
+			PLC_Register_setCValue(countIdx, VALUE_TYPE_ISON, TRUE);
+			PLC_Register_setCValue(countIdx, VALUE_TYPE_SET, setValue);
+			PLC_Register_setCValue(countIdx, VALUE_TYPE_CURR, 0);
+		}*/
+		//PLC_Register_setTValue(addr1, VALUE_TYPE_CURR, currTime);
+		//TODO::PLC_Register_runTimer
+
+	}
+	/*else
+	{
+		DBG_LOGPRINT("\t[OUT_C] reset! curr = 0\n");
+		PLC_Register_setCValue(countIdx, VALUE_TYPE_ISON, FALSE);
+		PLC_Register_setCValue(countIdx, VALUE_TYPE_SET, 0);
+		PLC_Register_setCValue(countIdx, VALUE_TYPE_CURR, 0);
+		PLC_Register_setCValue(countIdx, VALUE_TYPE_RET, FALSE);
+	}*/
+}
+
+inline void inProcess_outT(uint16 trigger, uint16 timerIdx, long long setValue, uint8 setMode){
+	//printf("%s %d\n",__FUNCTION__, __LINE__);
+	//printf("setVal = %d, old setVal = %d\n",PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET),PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET_OLD));
+
+
+	//DBG_LOGPRINT("curr time : %s : tmr(%d)\n", timeToString(t), timer);
+	if(trigger)
+	{
+		struct timespec mytime;
+		long long currTimeUnit;
+
+		//clock_t curr;
+		//DBG_LOGPRINT("clock : %lldus = %lldms = %llds\n", curr, curr/1000, curr/1000000);
+
+		//curr = clock();
+		clock_gettime(CLOCK_MONOTONIC, &mytime);
+		if(setMode ==TIMER_MODE_HIGH || setMode ==TIMER_MODE_HIGH_STORE)
+		{
+			currTimeUnit = (long long)(mytime.tv_sec*1000 + mytime.tv_nsec/1000000); // 1ms
+			//currTimeUnit = (long long)curr/10;
+		}
+		else
+		{
+			//currTimeUnit = (long long)curr/10;
+			currTimeUnit = (long long)(mytime.tv_sec*10 + mytime.tv_nsec/100000000); //100 ms
+		}
+
+		//printf("gettimeofday setMode=%d sec=%ld cur=%lld \n", setMode, (unsigned long)mytime.tv_sec, currTimeUnit);
+		if(!PLC_Register_getTimer(timerIdx, VALUE_TYPE_ISON))
+		{/*is Off*/
+			PLC_Register_setTValue(timerIdx, VALUE_TYPE_ISON, TRUE);
+			PLC_Register_setTValue(timerIdx, VALUE_TYPE_SET, setValue);
+			PLC_Register_setTValue(timerIdx, VALUE_TYPE_CURR, 0);
+			//DBG_LOGPRINT("[T%d]Turn on timer (setValue = %lld)\n", timerIdx, setValue);
+
+		}
+		//DBG_LOGPRINT("Timer is on? : [T%d] %d\n", timerIdx, PLC_Register_getTimer(timerIdx, VALUE_TYPE_RET));
+		if(PLC_Register_getTimer(timerIdx, VALUE_TYPE_RET)!=TRUE)/*T-ON and Not reached to final value*/
+		{
+			long long pastTimeUnit= PLC_Register_getTimer(timerIdx, VALUE_TYPE_CURR);
+			//long long tarValue =  PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET);
+			//printf("Curr time state : %lld = %lld - %lld, tar = %lld\n", currTimeUnit- pastTimeUnit, currTimeUnit, pastTimeUnit, tarValue);
+
+			if(pastTimeUnit ==0 || currTimeUnit - pastTimeUnit < PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET))/*On Going*/
+			{
+				if(pastTimeUnit ==0)
+				{
+					PLC_Register_setTValue(timerIdx, VALUE_TYPE_CURR, currTimeUnit);
+					//DBG_LOGPRINT("timer is now staring : [T%d]%lld\n", timerIdx, setValue);
+				}
+				//DBG_LOGSCAN(buf, "\t[%s] : increase T%d : %d->%d\n", __FUNCTION__, timerIdx,PLC_Register_getTimer(timerIdx, VALUE_TYPE_CURR), PLC_Register_getTimer(timerIdx, VALUE_TYPE_CURR)+1);PLC_LOG_addLog(buf);
+				//PLC_Register_setTValue(timerIdx, VALUE_TYPE_SET, PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET) - (currTimeUnit - pastTimeUnit));
+				//DBG_LOGPRINT("timer is on going : [T%d]%lld\n", timerIdx, PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET) + pastTimeUnit+currTimeUnit );
+			}
+			else/*Time reached*/
+			{
+				PLC_Register_setTValue(timerIdx, VALUE_TYPE_RET, TRUE);
+				PLC_Register_setTValue(timerIdx, VALUE_TYPE_CURR, 0);
+				PLC_Register_setTValue(timerIdx, VALUE_TYPE_REMAINED, 0);
+				//DBG_LOGPRINT("set timer : [T%d] %lld-%lld<=%lld\n", timerIdx, currTimeUnit, pastTimeUnit, PLC_Register_getTimer(timerIdx, VALUE_TYPE_SET));
+			}
+		}
+		else/*Already On*/
+		{
+			//DBG_LOGPRINT("\t[%s] : Keeping T%d value as true .\n", __FUNCTION__, timerIdx);
+		}
+			//return postProcess_nop(inst, pos, opt);
+
+		//PLC_Register_setTValue(addr1, VALUE_TYPE_CURR, currTime);
+		//TODO::PLC_Register_runTimer
+
+	}
+	else if(setMode == TIMER_MODE_HIGH ||setMode == TIMER_MODE_NORMAL)
+	{
+		//DBG_LOGSCAN(buf, "\t[%s] : Turn T%d off.\n", __FUNCTION__, timerIdx);PLC_LOG_addLog(buf);
+		PLC_Register_setTValue(timerIdx, VALUE_TYPE_ISON, FALSE);
+		PLC_Register_setTValue(timerIdx, VALUE_TYPE_SET, 0);
+		PLC_Register_setTValue(timerIdx, VALUE_TYPE_CURR, 0);
+		PLC_Register_setTValue(timerIdx, VALUE_TYPE_RET, FALSE);
+	}
+	else{
+		//DBG_LOGSCAN(buf, "\t[%s] : T%d is holding its value.\n", __FUNCTION__, timerIdx);PLC_LOG_addLog(buf);
+	}
+}
+
+
+
+uint32 postProcess_changeCurrentBranchValue(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal){
+
+	currBitValue = rstVal;
+	PLC_DEVICE_overWirteBlockResult(rstVal);
+	return finalProcess_progressPosition(inst, pos, opt->nOperandPosCount);
+
+
+	return TRUE;
+}
+inline uint32 postProcess_pushNewBranchedValue(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal){
+
+
+	currBitValue = rstVal;
+	if(!TaskList_setTaskCMDValue(*pos, rstVal))
+	{
+		DBG_LOGPRINT("\t[ERROR %s:%s] TaskList_setTaskCMDValue %d at position = %d\n",__FUNCTION__, opt->strName, rstVal, *pos);
+		return FALSE;
+	}
+
+	//TIME_SET_START;
+
+
+	PLC_DEVICE_saveBlockResult((uint8)rstVal);
+
+	return TRUE;//finalProcess_progressPosition(inst, pos, opt->nOperandPosCount);
+
+	//return TRUE;
+}
+
+inline uint32 postProcess_out(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal){
+
+	//uint8* operand = inProcess_getIndexedOperand(inst, *pos, 0);
+	uint8* operand = inProcess_getNextOperand(inst, pos);
+	if(!operand)
+	{
+		DBG_LOGPRINT("[ERROR %s] Line : %d!\n", __FUNCTION__, __LINE__);
+		return FALSE;
+	}
+	//DBG_LOGPRINT("\t[OUT] set value : [%s%d] <== %d\n", opt->strName, );
+	if(!PLC_DEVICE_setDeviceValue(operand, rstVal, 0))
+	{
+		DBG_LOGPRINT("[ERROR %s] Line : %d!\n", __FUNCTION__, __LINE__);
+		return FALSE;
+	}
+	currBitValue = rstVal;
+
+	return TRUE;//finalProcess_progressPosition(inst, pos, opt->nOperandPosCount);
+}
+
+inline uint32 postProcess_outBySize(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal, uint8 size){
+
+	uint16 optMLCode = opt->nMLCode;
+	uint8 opndType = inst[OPERATOR_LENGTH+*pos];
+	uint16* valpoint = (uint16*)&inst[OPERATOR_LENGTH+*pos+1];
+	uint16 opndVal = *valpoint;
+	//uint16 opndVal = inst[OPERATOR_LENGTH+*pos+1]*256+(inst[OPERATOR_LENGTH+*pos+2]);
+	if(!isValid(optMLCode, 0, opndType))
+	{
+		/*DBG_LOGSCAN(buf,
+				"\t[%s] error while checking operand& operator [%s%d]%d\n",
+				opt->strName,
+				opndic[opndType].strType,
+				opndVal,
+				PLC_DEVICE_getDeviceValue(&inst[OPERATOR_LENGTH+*pos]));
+		PLC_LOG_addLog(buf);*/
+		return FALSE;
+	}
+
+	if(PLC_DEVICE_setDeviceValueBySize(&inst[OPERATOR_LENGTH+*pos], (long long)rstVal, size)==PLC_DEVICE_FALSE_32)
+	{
+		DBG_LOGPRINT("\t[%s] error while PLC_DEVICE_setDeviceValueBySize\n", opt->strName);
+		return FALSE;
+	}
+	return finalProcess_progressPosition(inst, pos, opt->nOperandPosCount);
+}
+
+inline uint32 finalProcess_progressPosition(uint8 inst[],uint32* pos, int operandCount){
+	(*pos) += OPERATOR_LENGTH;
+	int i;
+	for(i=0;i<operandCount;i++)
+	{
+		(*pos) += OPND_DICT_ByteSize(&inst[*pos]);
+	}
+	return PLC_DEVICE_increaseStep();
+}
+inline uint32 inProcess_saveToDev(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal, uint8 opndIdx, uint8 byteSize){
+	uint16 optMLCode = opt->nMLCode;
+	//printf("saveToDev input rst = %08X, byteSize = %d\n", rstVal, byteSize);
+	uint8* operand = inProcess_getIndexedOperand(inst, *pos, opndIdx);
+	uint8 opndType = inProcess_getIndexedOperand(inst, *pos, opndIdx)[0];
+	//int pos = inProcess_getIndexedOperand()(inst, *pos, opndIdx);
+
+	if(!isValid(optMLCode, opndIdx, opndType))
+	{
+		DBG_LOGPRINT("\t[%s]invalid value :[%d] \n",__FUNCTION__, opndType);
+		return PLC_DEVICE_FALSE_32;
+	}
+
+	//printf("[%s%02X%02X] %d\n", opndic[operand[0]].strType, operand[1], operand[2], rstVal);
+	return PLC_DEVICE_setDeviceValueBySize(operand, (long long)rstVal, 8*byteSize);
+}
+inline uint8 inProcess_from(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 unitByteSize)
+{
+	uint32 firstDevAddr, secondRegAddr, forthCount;
+	firstDevAddr = preProcess_load(inst, pos, opt, 0);
+	if(firstDevAddr == PLC_DEVICE_FALSE_32)
+		return FALSE;
+	secondRegAddr = preProcess_load(inst, pos, opt, 1);
+	if(secondRegAddr == PLC_DEVICE_FALSE_32)
+		return FALSE;
+	uint8* thirdDst = preProcess_loadString(inst, pos, opt, 2);
+	if(thirdDst==NULL)
+		return FALSE;
+	forthCount = unitByteSize*preProcess_load(inst, pos, opt, 3);
+	if(forthCount == PLC_DEVICE_FALSE_32)
+		return FALSE;
+	if(!PLC_RealDevice_getFromIntelligenceModule(thirdDst, firstDevAddr, secondRegAddr, forthCount))
+		return FALSE;
+	return TRUE;
+}
+inline uint8 inProcess_to(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 unitByteSize)
+{
+	uint32 firstDevAddr, secondRegAddr, forthCount;
+	firstDevAddr = preProcess_load(inst, pos, opt, 0);
+	if(firstDevAddr == PLC_DEVICE_FALSE_32)
+		return FALSE;
+	secondRegAddr = preProcess_load(inst, pos, opt, 1);
+	if(secondRegAddr == PLC_DEVICE_FALSE_32)
+		return FALSE;
+	uint8* thirdSrc = preProcess_loadString(inst, pos, opt, 2);
+	if(thirdSrc==NULL)
+		return FALSE;
+	forthCount = unitByteSize*preProcess_load(inst, pos, opt, 3);
+	if(forthCount == PLC_DEVICE_FALSE_32)
+		return FALSE;
+	if(!PLC_RealDevice_setToIntelligenceModule(thirdSrc, firstDevAddr, secondRegAddr, forthCount))
+		return FALSE;
+	return TRUE;
+
+}

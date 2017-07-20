@@ -1,0 +1,905 @@
+/*
+ * PLC_DeviceExecutor.c
+ *
+ *  Created on: 2015. 2. 13.
+ *      Author: skson
+ */
+#ifndef PLC_TaskExecutor_H_
+#include "PLC_TaskExecutor.h"
+#include "PLC_OperatorDictionary.h"
+#include "PLC_ExecFunctions.h"
+#include "PLC_Log.h"
+#include "PLC_EventHandler.h"
+
+#endif
+static char* controlInstructionFilePathName = "./control.txt";
+static char watchMode = FALSE;
+static int controlPoint = 0;
+static double execTime = 0.f;
+//static int flagEND = FALSE;
+static int memorySize = 0;
+
+static const int sdRegTaskInfoHead[] =
+{
+		PLC_SD_REG_1ST_SCAN_PROG_ID,			PLC_SD_REG_2ND_SCAN_PROG_ID,
+		PLC_SD_REG_3RD_SCAN_PROG_ID,			PLC_SD_REG_4TH_SCAN_PROG_ID,
+		PLC_SD_REG_5TH_SCAN_PROG_ID,			PLC_SD_REG_6TH_SCAN_PROG_ID,
+		PLC_SD_REG_7TH_SCAN_PROG_ID,			PLC_SD_REG_8TH_SCAN_PROG_ID,
+
+		PLC_SD_REG_9TH_SCAN_PROG_ID,			PLC_SD_REG_10TH_SCAN_PROG_ID,
+		PLC_SD_REG_11TH_SCAN_PROG_ID,			PLC_SD_REG_12TH_SCAN_PROG_ID,
+		PLC_SD_REG_13TH_SCAN_PROG_ID,			PLC_SD_REG_14TH_SCAN_PROG_ID,
+		PLC_SD_REG_15TH_SCAN_PROG_ID,			PLC_SD_REG_16TH_SCAN_PROG_ID,
+
+		PLC_SD_REG_17TH_SCAN_PROG_ID,			PLC_SD_REG_18TH_SCAN_PROG_ID,
+		PLC_SD_REG_19TH_SCAN_PROG_ID,			PLC_SD_REG_20TH_SCAN_PROG_ID,
+		PLC_SD_REG_21TH_SCAN_PROG_ID,			PLC_SD_REG_22TH_SCAN_PROG_ID,
+		PLC_SD_REG_23TH_SCAN_PROG_ID,			PLC_SD_REG_24TH_SCAN_PROG_ID,
+
+		PLC_SD_REG_25TH_SCAN_PROG_ID,			PLC_SD_REG_26TH_SCAN_PROG_ID,
+		PLC_SD_REG_27TH_SCAN_PROG_ID,			PLC_SD_REG_28TH_SCAN_PROG_ID,
+		PLC_SD_REG_29TH_SCAN_PROG_ID,			PLC_SD_REG_30TH_SCAN_PROG_ID,
+		PLC_SD_REG_31TH_SCAN_PROG_ID,			PLC_SD_REG_32TH_SCAN_PROG_ID,
+};
+
+typedef enum{
+	TASK_ID=0,
+	CURR_msec=1,
+	CURR_usec=2,
+	MIN_msec=3,
+	MIN_usec=4,
+	MAX_msec=5,
+	MAX_usec=6,
+}TaskTimeInfo;
+
+/*static uint16 currOperator = 0;
+static uint8 currTaskIdx = 0;
+static uint32 currTaskPos = 0;
+static EventFlag currTaskPriority = EVENT_NONE;
+*/
+PLC_TaskExecutor currStatus;
+PLC_TaskExecutor preservedStatus;
+
+extern uint8 reloadMLfile(char* filePathName, uint8 taskIdx, uint32 crc, LaunchingCondition condition); // for ML from file
+//extern void TestCodeTearDown(); // for ML from source
+
+extern int PLC_ListOfTestSuite_getControlSize();
+
+extern void ScanTimeLog_Init();
+
+inline void PLC_TaskExecutor_preserveTaskState()
+{
+	memcpy(&preservedStatus, &currStatus, sizeof(PLC_TaskExecutor));
+}
+inline void PLC_TaskExecutor_recoverTaskState()
+{
+	memcpy(&currStatus, &preservedStatus, sizeof(PLC_TaskExecutor));
+}
+
+inline EventFlag PLC_TaskExecutor_getCurrPriority()
+{
+	return currStatus.currTaskPriority;
+}
+
+inline uint8 PLC_TaskExecutor_getCurrTaskIdx(){
+	return currStatus.currTaskIdx;
+}
+
+inline uint16 PLC_TaskExecutor_getCurrOperator(){
+	return currStatus.currOperator;
+}
+inline void setMemSize(int setMemSize)
+{
+	memorySize = setMemSize;
+}
+inline int getMemSize(){
+	return memorySize;
+}
+
+inline void setWatchMode(char isWatchMode){
+	watchMode = isWatchMode;
+}
+inline char isWatchMode(){
+	return watchMode;
+}
+
+inline uint8 PLC_TaskExecutor_setCurrPoint(uint8 taskIdx, uint32 taskPos)
+{
+	if(taskIdx >= 8)
+		return FALSE;
+	currStatus.currTaskIdx = taskIdx;
+	currStatus.currTaskPos = taskPos;
+	return TRUE;
+}
+
+uint8 PLC_TaskExecutor_execOneScanTime(uint8 taskIdx, uint32 currPos, EventFlag priority){
+
+	uint32 pos;
+	//uint16 instructionOperator ;
+	uint16* instPos;
+	pos = currPos;
+	PLC_TaskExecutor_preserveTaskState();
+	//lastTaskIdx = currStatus.currTaskIdx;
+	//lastPriority = currStatus.currTaskPriority;
+	currStatus.currTaskIdx = taskIdx;
+	currStatus.currTaskPriority = priority;
+
+
+
+	if(taskIdx>=MAX_TASK_COUNT)
+	{
+		DBG_LOGPRINT("TaskIdx is out of range!( %d )\n", taskIdx);
+		return FALSE;
+	}
+
+	uint32 instructionSize = TaskList_getTaskSize(taskIdx);
+	uint8 *internalInstructions = TaskList_getTaskHead(taskIdx);
+
+	PLC_Operator* opt ;
+	uint32 (*execFunction)(uint8[], uint32*, PLC_Operator*) ;
+	char buf[200];
+	int stepIndex = 0;
+	memset(buf, 0, 200);
+
+	do{
+		//gets operator
+		PLC_TimeScanManager_notifyExecStart();
+		uint32 ret;
+		instPos = (uint16*)&internalInstructions[pos];
+		//instructionOperator =  *instPos;
+		//skip if this position is point label.
+
+
+#if 1
+		//todo: interruption code 2015.12.23
+		//DBG_LOGPRINT("EventHandler count = %d.\n", PLC_EventHandler_hasEvent());
+		while(PLC_EventHandler_hasEvent())
+		{
+			if(!PLC_EventHandler_callEvent())
+			{
+				DBG_LOGPRINT("[ERROR] EventHandler fault. Skip error handling.\n");
+			}
+		}
+		//interruption code end 2015.12.23
+#endif
+		if(*instPos == ML_CODE_POINT)
+		{
+			pos+=POINT_LENGTH;
+			continue;
+		}
+
+		opt = PLC_OPERATOR_DICTIONARY_findOperator(*instPos);
+		currStatus.currOperator = opt->nMLCode;
+
+		if(!opt)
+		{
+			DBG_LOGPRINT("[ERROR] tPLC_OPERATOR_DICTIONARY_findOperator : %d, pointer : %d \n", *instPos, pos);
+			//DBG_LOGPRINT("\tPLC_OPERATOR_DICTIONARY_findOperator Error!\n");
+			return FALSE;
+		}
+		execFunction = opt->pExecfunction;
+		//DBG_LOGPRINT("%s\n", opt->strName);
+
+		/*if( execFunction != execMCR && preProcess_checkMC() != TRUE ){
+			postProcess_nop(internalInstructions, &pos, opt);
+			ret = NO_OPERATION;
+		}*/
+		//else
+
+		//run exec function
+		//
+		//DBG_LOGPRINT("[EXEC] [%s - %d]\n",opt->strName, pos);
+#if PLC_LOG_DEF
+		//DBG_LOGPRINT("instruction size = %d\n", instructionSize);
+#endif
+
+		PLC_ExecFunctions_setCurrPos(pos);
+		ret = (uint32)execFunction(internalInstructions, &pos, opt);
+
+		//ScanTimeLog_print();
+#if PLC_LOG_DEF
+			if(ret==FALSE)
+				DBG_LOGPRINT("[Error] execFunction %s\n", opt->strName);
+#endif
+		//printf("%s %d\n", __FUNCTION__, __LINE__);
+
+		if(ret!=TRUE)
+		{
+			if(ret != FALSE)
+			{
+				handleExecError(ret, currStatus.currTaskIdx, PLC_ExecFunctions_getCurrPos());
+			}
+			else
+			{
+				//DBG_LOGPRINT("[ERROR] while EXEC_%s(Position : %d):RESULT ERROR!\n", opt->strName,pos);
+			}
+			/*int i;
+			for(i=0;i<50;i++)
+			{
+				DBG_LOGSCAN(buf,"%02X ", PLC_TaskExecutor_getDevice()->internalInstructions[i]);
+				PLC_LOG_addLog(buf);
+			}
+			//PLC_LOG_addLog("\n");
+			 * */
+			//PLC_DEVICE_Init();
+			DBG_LOGPRINT("\texecFunction Error! ret = %d\n", ret);
+			return FALSE;
+		}
+		/*else if(ret==NO_OPERATION)
+		{
+			//DBG_LOGSCAN(buf, "[EXEC] %s passed!\n", opt->strName);PLC_LOG_addLog(buf);
+		}
+		else
+		{
+			//DBG_LOGSCAN(buf,"[EXEC] %s successfully executed!\n", opt->strName);PLC_LOG_addLog(buf);
+		}*/
+		if(opt->nMLCode == ML_CODE_END||opt->nMLCode== ML_CODE_FEND||opt->nMLCode== ML_CODE_IRET||opt->nMLCode== ML_CODE_RET)
+		{
+			//flagEND = (opt->nMLCode == ML_CODE_END);
+			break;
+		}
+		/*if(!ret)
+		{
+			//PLC_TaskExecutor_execInterruption(ret, (uint16*)&pos, __FUNCTION__, __LINE__);
+		}*/
+		PLC_TimeScanManager_notifyExecEnd_temp(opt->strName);
+	}while(stepIndex++<PLC_DEFINITION_MAX_STEP && pos < instructionSize);
+
+	PLC_TaskExecutor_recoverTaskState();
+	//currStatus.currTaskIdx = lastTaskIdx;
+	//currStatus.currTaskPriority = lastPriority;
+	return TRUE;
+}
+
+inline void PLC_TaskExecutor_setTaskTimeInfo(uint8 taskOrder, uint8 taskIdx, timespec_t rst)
+{
+
+	uint16 taskIdx16 = taskIdx;
+	int SM_ADDR = sdRegTaskInfoHead[taskOrder];
+	PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR, 0, (uint8*)&taskIdx16, TYPE_WORD);
+	PLC_TaskExecutor_setTimeInfo(SM_ADDR+1, rst);
+
+
+
+	/*DBG_LOGPRINT("[taskOrder %d][SM%d][%d]task: [CURR] %d.%d, [MIN] %d.%d, [MAX] %d.%d\n"
+			,taskOrder
+			,sdRegTaskInfoHead[taskOrder]
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder])
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder]+CURR_msec)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder]+CURR_usec)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder]+MIN_msec)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder]+MIN_usec)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder]+MAX_msec)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, sdRegTaskInfoHead[taskOrder]+MAX_usec)
+			);*/
+}
+
+inline void PLC_TaskExecutor_setTimeInfo(int SM_ADDR, timespec_t rst)
+{
+	uint16 usec, msec;
+	uint16 uval, mval;
+
+	if(rst.tv_nsec <0)
+	{
+		rst.tv_sec--;
+		rst.tv_nsec+=1000000000;
+	}
+	usec = (rst.tv_nsec / 1000) % 1000;
+	msec = (rst.tv_nsec / 1000000) + rst.tv_sec*1000;
+
+	PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR, 0, (uint8*)&msec, TYPE_WORD);
+	PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR+1, 0, (uint8*)&usec, TYPE_WORD);
+
+	mval = PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+2);
+	uval = PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+3);
+
+	if(msec*1000 + usec < mval * 1000 + uval || mval * 1000 + uval==0)
+	{
+		PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR+2, 0, (uint8*)&msec, TYPE_WORD);
+		PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR+3, 0, (uint8*)&usec, TYPE_WORD);
+	}
+
+	mval = PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+4);
+	uval = PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+5);
+
+	if(msec*1000 + usec > mval * 1000 + uval)
+	{
+		PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR+4, 0, (uint8*)&msec, TYPE_WORD);
+		PLC_Register_set(OPERAND_ML_CODE_SM, SM_ADDR+5, 0, (uint8*)&usec, TYPE_WORD);
+	}
+	/*DBG_LOGPRINT("[SM%d] %d %d %d %d %d %d\n"
+			,SM_ADDR
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+1)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+2)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+3)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+4)
+			,PLC_Register_getWord(OPERAND_ML_CODE_SM, SM_ADDR+5));
+			*/
+}
+
+void PLC_TaskExecutor_progressTime(){
+	int idx;
+	PLC_Register_saveFast();
+	PLC_Device* dev = PLC_DEVICE_getInstance();
+	for(idx = 0 ; idx<1; idx++)
+		STACK_set(&(dev->device_pulse_stack), idx, (STACK_get(&(dev->device_pulse_stack), idx)<<1));
+
+}
+
+inline uint8 PLC_TaskExecutor_readFromFileToBuffer(char* filePathName, char buffer[])
+{
+	if(filePathName==NULL)
+	{
+		DBG_LOGPRINT("[ERROR %s] ML file path name is NULL!\n", __FUNCTION__);
+		return FALSE;
+	}
+
+	FILE* file ;
+	int idx = 0;
+
+	if((file = fopen(filePathName, "rb"))==NULL)
+	{
+		DBG_LOGPRINT("[ERROR %s] Fail to read ML file.\n", __FUNCTION__);
+		return FALSE;
+	}
+
+	fseek (file , 0 , SEEK_END);
+	idx = ftell (file);
+	rewind (file);
+
+	if( fread (buffer,1,idx,file)!=idx)
+	{
+		fclose(file);
+		return FALSE;
+	}
+	setMemSize(idx);
+	fclose(file);
+	return TRUE;
+}
+
+inline uint8 PLC_TaskExecutor_readFromFilesToBuffer(char* filePathName[], uint8 fileCount, char buffer[]){
+
+	if(fileCount > PLC_IL_TASK_MAXCOUNT)
+		return FALSE;
+
+	int idxFile = 0;
+	int totalBufSize = 0;
+	FILE* file ;
+	for(idxFile=0;idxFile<fileCount; idxFile++)
+	{
+		if(filePathName[idxFile]==NULL)
+		{
+			DBG_LOGPRINT("[ERROR %s] ML file path name[%d] is NULL!\n", __FUNCTION__, idxFile);
+			return FALSE;
+		}
+
+
+		int currBufIdx = 0;
+
+		if((file = fopen(filePathName[idxFile], "rb"))==NULL)
+		{
+			DBG_LOGPRINT("[ERROR %s] Fail to read ML file[%d].\n", __FUNCTION__, idxFile);
+			return FALSE;
+		}
+
+		fseek (file , 0 , SEEK_END);
+		currBufIdx = ftell (file);
+		rewind (file);
+
+		if( fread (&buffer[totalBufSize],1,currBufIdx,file)!=currBufIdx)
+		{
+			fclose(file);
+			return FALSE;
+		}
+		totalBufSize += currBufIdx;
+		setMemSize(totalBufSize);
+		fclose(file);
+	}
+	return TRUE;
+}
+
+
+inline PLC_DEVICE_Controller* PLC_TaskExecutor_readFromFileToControl()
+{
+	int size = 128, pos;
+	int c;
+
+	char *buffer = (char *)malloc(size);
+
+	FILE *f= fopen(controlInstructionFilePathName, "r");
+	if(f==NULL)
+	{
+		DBG_LOGPRINT("[ERROR %s] Fail to read control file.\n", __FUNCTION__);
+		return NULL;
+	}
+	int lineIndex = 0;
+	//controller->nCountScanTimeLimit=0;
+	controllerInstruction.nCountInstruction=0;
+	memset(controllerInstruction.controlInstruction, 0, MAX_CONTROL_COUNT*sizeof(PLC_DEVICE_ControlInstruction));
+
+	do { // read all lines in file
+
+		pos = 0;
+		do{ // read one line
+
+			c = fgetc(f);
+			if(c==EOF)
+				break;
+			if(c != '\n') buffer[pos++] = (char)c;
+			if(pos >= size - 1)
+			{ // increase buffer length - leave room for 0
+				size *=2;
+				buffer = (char*)realloc((void*)buffer, size);
+			}
+
+		}while(c != '\n');
+		//DBG_LOGPRINT("[buffer]%s\n",buffer);
+		buffer[pos] = 0;
+		if(lineIndex ==0)
+		{//first line = read running scantime
+
+			int index;
+			for(index=0;index<strlen(buffer);index++)
+			{
+				if(buffer[index]-'0'>9||buffer[index]-'0'<0)
+					return NULL;
+				controllerInstruction.nCountScanTimeLimit*=10;
+				controllerInstruction.nCountScanTimeLimit+=(buffer[index]-'0');
+
+			}
+			//DBG_LOGPRINT("[LOADING] Execution scantime limitation : %d\n",controllerInstruction.nCountScanTimeLimit);
+		}else{
+			if(parseToControlBuffer(buffer, &controllerInstruction.controlInstruction[lineIndex-1])==FALSE)
+				return NULL;
+			controllerInstruction.nCountInstruction++;
+		}
+		lineIndex++;
+	} while(c != EOF);
+	fclose(f);
+
+	//check file loading is exact.
+
+	free(buffer);
+
+
+
+	return &controllerInstruction;
+}
+
+
+inline uint8 PLC_TaskExecutor_init(){
+	PLC_DEVICE_clearChangedRegisterLog();
+	PLC_DEVICE_getInstance()->nCurrTimeScan = 0;
+	PLC_DEVICE_getInstance()->nExecTime = 0;
+	controlPoint = 0;
+	TaskList_init();
+	currStatus.currOperator = 0;
+	currStatus.currTaskIdx = 0;
+	currStatus.currTaskPos = 0;
+	currStatus.currTaskPriority = 0;
+	STACK_clear(&currStatus.stackOffMCState);
+	STACK_clear(&currStatus.stackOnMCState);
+	//STACK_push(&currStatus.stackOnMCState, 1);
+
+
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+	//for jumping, interrupting
+	//DBG_LOGPRINT("size of buf = %d\n", sizeof(internalInstructions));
+	/*if(!Task_loadTasksFromBuffers(internalInstructions, instructionMemorySize, 1))
+	{
+		//printf("%s %d\n", __FUNCTION__, __LINE__);
+		DBG_LOGPRINT("[Error] Device task registration error!\n");
+		//PLC_LOG_addLog("\n[ERROR] while loading Task_loadTasksFromBuffers : Failed to reach CMD END.\n");
+		return FALSE;
+	}*/
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+/*
+	if(!PLC_InterruptionModule_AddJumpingPoint())
+	{
+		DBG_LOGPRINT("[Error]Device interruption module registration error!\n");
+		return FALSE;
+	}
+*/
+	PLC_InterruptionModule_init();
+	//ScanTimeLog_Init();
+	return TRUE;
+}
+
+inline uint8 PLC_TaskExecutor_reloadTask(uint8 internalInstructions[], int instructionMemorySize, int taskIdx, LaunchingCondition condition){
+	PLC_DEVICE_initExceptRegAndPointTable();
+	PLC_PointTable_eraseTaskPoint(taskIdx);
+	if(!Task_loadTasksFromBuffers(internalInstructions, instructionMemorySize, taskIdx, condition))
+	{
+		//printf("%s %d\n", __FUNCTION__, __LINE__);
+		DBG_LOGPRINT("[Error] Device task registration error!\n");
+		//PLC_LOG_addLog("\n[ERROR] while loading Task_loadTasksFromBuffers : Failed to reach CMD END.\n");
+		return FALSE;
+	}
+	return TRUE;//PLC_TaskExecutor_init(internalInstructions, instructionMemorySize);
+}
+
+
+
+uint8 PLC_TaskExecutor_exec(
+		//PLC_DEVICE_ControlInstruction instructions[],
+		//int controlInstructionMaxCount,
+		int scanTimeDelay)
+{
+	PLC_Device* dev = PLC_DEVICE_getInstance();
+	PLC_IL_Task_List* taskList = TaskList_getInstance();
+	int controlInstructionMaxCount = PLC_ListOfTestSuite_getControlSize();
+	PLC_DEVICE_ControlInstruction* instructions = (PLC_DEVICE_ControlInstruction*)PLC_ListOfTestSuite_getControlInput();
+	//PLC_LOG_addLog("\n[PREPARING]---------------\n");
+	for( controlPoint = 0 ; controlPoint<(uint32)controlInstructionMaxCount ; controlPoint++ )
+	{
+		if( dev->nCurrTimeScan == instructions[controlPoint].nTime )
+		{
+			if( !PLC_DEVICE_setDeviceValue(
+					instructions[controlPoint].pInputPosition,
+					instructions[controlPoint].nInputValue,
+					0))
+			{
+				DBG_LOGPRINT("[ERROR] PLC_TaskExecutor_exec set value = [%s%d]%d\n", opndic[instructions[controlPoint].pInputPosition[0]].strType, *(uint16*)&instructions[controlPoint].pInputPosition[1], instructions[controlPoint].nInputValue);
+				PLC_LOG_clearDebugBuffer();
+				return FALSE;
+			}
+		}
+	}
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+	int taskOrder;
+	//uint8 isFirst = (PLC_TaskExecutor_getDevice()->nExecTime==0);
+	//DBG_LOGPRINT("nExecTime = %d!\n", PLC_TaskExecutor_getDevice()->nExecTime);
+	timespec_t rst_first, rst_while;
+	rst_first.tv_sec = 0;
+	rst_first.tv_nsec = 0;
+	rst_while.tv_sec = 0;
+	rst_while.tv_nsec = 0;
+
+	for(taskOrder=0; taskOrder<MAX_TASK_COUNT; taskOrder++)
+	{
+		//todo: exec interruption
+		//end todo;
+		timespec_t start;
+		timespec_t end;
+		timespec_t rst;
+		//clock_t start, end;
+		clock_gettime(CLOCK_REALTIME, &start);
+		//start =  clock()/CLOCKS_PER_SEC;
+		uint8 taskIdx=0;
+
+		if(!TaskList_getOrder(&taskIdx, taskOrder))
+			return FALSE;
+
+
+		if( taskList->list[taskIdx].nLaunchingCondition != CONDITION_ALWAYS_EXEC
+				)
+		{
+			if( dev->nExecTime != 0
+					|| taskList->list[taskIdx].nLaunchingCondition != CONDITION_ALARM_EXEC
+				)
+			//DBG_LOGPRINT("Skipping %d task!\n", taskIdx);
+			continue;
+		}
+
+		if( !PLC_TaskExecutor_execOneScanTime(taskIdx, 0, EVENT_NONE))
+		{
+			//PLC_LOG_addLog("\n[ERROR] PLC_TaskExecutor_execOneScanTime  : execution error.\n");
+			DBG_LOGPRINT("\tPLC_TaskExecutor_execOneScanTime Error!\n");
+			//PLC_setSMRegister();
+			return FALSE;
+		}
+
+		clock_gettime(CLOCK_REALTIME, &end);
+
+		rst.tv_sec = end.tv_sec - start.tv_sec;
+		rst.tv_nsec = end.tv_nsec - start.tv_nsec;
+		PLC_TaskExecutor_setTaskTimeInfo(taskOrder, taskIdx, rst);
+		if(dev->nExecTime == 0
+				&& TaskList_getInstance()->list[taskIdx].nLaunchingCondition==CONDITION_ALARM_EXEC)
+		{
+			rst_first.tv_sec += rst.tv_sec;
+			rst_first.tv_nsec += rst.tv_nsec;
+		}
+		else
+		{
+			rst_while.tv_sec += rst.tv_sec;
+			rst_while.tv_nsec += rst.tv_nsec;
+
+		}
+	}
+	if(dev->nExecTime == 0)
+	{
+		uint16 usec = usec = (rst_first.tv_nsec / 1000) % 1000;
+		uint16 msec = (rst_first.tv_nsec / 1000000) + rst_first.tv_sec*1000;
+		PLC_Register_set(OPERAND_ML_CODE_SM, PLC_SD_REG_INIT_SCANTIME_MS, 0, (uint8*)&msec, TYPE_WORD);
+		PLC_Register_set(OPERAND_ML_CODE_SM, PLC_SD_REG_INIT_SCANTIME_US, 0, (uint8*)&usec, TYPE_WORD);
+	}
+	else
+	{
+		//DBG_LOGPRINT("\tPLC_TaskExecutor_execOneScanTime CURR TASK TIME INFO!\n");
+		PLC_TaskExecutor_setTimeInfo(PLC_SD_REG_CUR_SCAN_TIME_MS, rst_while);
+	}
+
+	//printf("%s %d\n", __FUNCTION__, __LINE__);
+
+	usleep(scanTimeDelay);
+	dev->nCurrTimeScan++;
+	dev->nExecTime++;
+	PLC_TaskExecutor_progressTime();
+	return TRUE;
+}
+
+inline uint8 PLC_TaskExecutor_execInterruption(uint8 interruptionFlag, uint16* pos, const char* functionName, int line)
+{
+	return FALSE;
+}
+
+uint8 PLC_TaskExecutor_execWithDeviceControl_Test(
+		int timeCount,
+		int scanTimeDelay)
+{
+
+	/*if(!PLC_TaskExecutor_init())
+	{
+		printf("PLC_TaskExecutor_init : initiation failed!\n");
+		return FALSE;
+	}*/
+	//initial code here! example
+	/*
+	int i;
+	for(i=0; i<4;i++)
+		setTestILInput(i);*/
+	//DBG_LOGPRINT("[LOG] File loading succeed...\n");
+#if 0
+	//char* MLFilePathName0 ="/home/skson/out/TestMLs/cmd1k.ml";
+	char* MLFilePathName0 = "/home/skson/out/TestMLs/leesComplement.ml";
+	//char* MLFilePathName1 ="/home/skson/out/TestMLs/demo_test.ml";
+	//char* MLFilePathName2 ="/home/skson/out/TestMLs/test_1k.ml";
+	//DBG_LOGPRINT(MLFilePathName0);
+	if(!reloadMLfile(MLFilePathName0, 0, 10158, CONDITION_ALWAYS_EXEC))
+	{
+		DBG_LOGPRINT("[ERROR] while loading file : %s\n", MLFilePathName0);
+		return FALSE;
+	}
+	/*if(!reloadMLfile(MLFilePathName1, 1, CONDITION_ALWAYS_EXEC))
+	{
+		DBG_LOGPRINT("[ERROR] while loading file : %s\n", MLFilePathName1);
+		return FALSE;
+	}
+	if(!reloadMLfile(MLFilePathName2, 2, CONDITION_ALWAYS_EXEC))
+	{
+		DBG_LOGPRINT("[ERROR] while loading file : %s\n", MLFilePathName2);
+		return FALSE;
+	}
+	DBG_LOGPRINT("[LOG] File loading succeed...\n");
+	PLC_EventHandler_mapEventFlagToGIP(5, 5);
+	PLC_EventHandler_pushEvent(5);
+*/
+#endif
+
+#if 0
+	int i=0;
+	for(i=0;i<5;i++)
+	{
+		setTestILInput(i);
+	}
+#endif
+
+#if 1
+	setTimerLD();
+	setTimerInput();
+#endif
+	uint8 isReload = FALSE;
+	uint8 order[] = {1,2,3,4,5,6,7,0};
+	TaskList_setOrder(order);
+
+	/*PLC_EventHandler_pushEvent(3);
+	PLC_EventHandler_pushEvent(6);
+	PLC_EventHandler_pushEvent(4);
+	PLC_EventHandler_pushEvent(9);
+	PLC_EventHandler_pushEvent(0);*/
+	while(PLC_DEVICE_getInstance()->nCurrTimeScan<timeCount || timeCount<0)
+	{
+		//loading code here! example
+		uint32 crc = 0;
+		if(isReload)
+		{
+			reloadMLfile("/home/skson/out/test/testIL/goend.ml", 3, crc, CONDITION_ALWAYS_EXEC);
+			isReload=FALSE;
+		}
+		if(FLAG_SYSTEM_HOLD==1)
+			continue;
+		if(!PLC_TaskExecutor_exec(scanTimeDelay))
+		{
+			printf("runtime error!\n");
+			return FALSE;
+		}
+		/*
+		if(PLC_TaskExecutor_getDevice()->nCurrTimeScan == 2000)
+		{
+			PLC_Register_rstTValue(0);
+			PLC_Register_rstTValue(1);
+			PLC_Register_rstTValue(2);
+			PLC_Register_rstTValue(3);
+		}
+		*/
+/*
+		if(PLC_TaskExecutor_getDevice()->nCurrTimeScan == 100)
+		{
+
+			MLFilePathName1 = "/home/skson/out/TestMLs/out0.ml";
+			if(!reloadMLfile(MLFilePathName1, 1, CONDITION_ALWAYS_EXEC))
+			{
+				DBG_LOGPRINT("[ERROR] while loading file : %s\n", MLFilePathName1);
+				return FALSE;
+			}
+		}
+		else if(PLC_TaskExecutor_getDevice()->nCurrTimeScan>100)
+			DBG_LOGPRINT("[TIMECOUNT] %d : file exchanged : %s\n", timeCount, MLFilePathName1);
+			*/
+	}
+
+	//PLC_LOG_printSavedLog();
+	//QueueLog_print();
+	QueueLog_save("./LogFile.log");
+	return TRUE;
+}
+#define MAX_WORD_COUNT 5
+#define MAX_WORD_LENGTH 20
+uint8 parseToControlBuffer(char* srcLine, PLC_DEVICE_ControlInstruction* control){
+
+	char buffer[MAX_WORD_COUNT][MAX_WORD_LENGTH];
+	memset(buffer, 0, MAX_WORD_COUNT*MAX_WORD_LENGTH);
+
+	int charIndex = 1;
+	uint32 i;
+	uint8 pos[5];
+	pos[0]=0;
+	for(i=0; i<strlen(srcLine); i++)
+	{
+		if(srcLine[i]==' ' ||srcLine[i]=='\0' ||i== strlen(srcLine)-1)
+		{
+			pos[charIndex++] = i+1;
+		}
+		if(srcLine[i]=='\0' )
+			break;
+	}
+
+
+	for(i=0;i<charIndex-1;i++)
+	{
+		char* currChar = &srcLine[pos[i]];
+		memcpy(buffer[i], currChar, pos[i+1]-pos[i]);
+
+	}
+
+	//load setting time.
+	if(buffer[0][0]!='T')
+	{
+		//DBG_LOG("[ERROR] Unexpected form is found when reading Control-Data.");
+		return FALSE;
+	}
+	for(i = 1 ; i<strlen(buffer[0] )-1; i++)
+	{
+		control->nTime *= 10;
+		int val = buffer[0][i]-'0';
+		if(val<0 || val >9)
+			return FALSE;
+
+		control->nTime += val;
+	}
+
+
+	//load register position.
+	int typeLength = 1;
+	char operand[3];
+	uint16 operandVal=0;
+	operand[0] = buffer[1][0];
+
+	if(operand[0]=='W')
+	{
+		typeLength = 2;
+		operand[1]= buffer[1][1];
+	}
+	operand[typeLength]='\0';
+	control->pInputPosition[0] = PLC_OPERAND_DICTIONARY_findOperandByName(operand)->nMLCode;
+
+	for(i = typeLength; i<strlen(buffer[1] )-1; i++)
+	{
+		operandVal *= 10;
+		int val = buffer[1][i]-'0';
+		if(val<0 || val >9)
+			return FALSE;
+
+		operandVal += val;
+	}
+	memcpy(&control->pInputPosition[1], &operandVal, sizeof(uint16));
+	//control->pInputPosition[1] = operandVal*256;
+	//control->pInputPosition[2] = operandVal%256;
+
+	//load setting value.
+	int setValue = 0;
+	for(i = 0; i<strlen(buffer[2] ); i++)
+	{
+		setValue *= 10;
+		int val = buffer[2][i]-'0';
+		if(val<0 || val >9)
+			return FALSE;
+
+		setValue += val;
+	}
+	control->nInputValue = setValue;
+
+	return TRUE;
+}
+inline void printExecTimeOfScanTime(uint32 count){
+	if(count!=0)
+		printf("%s execution time interval = %f usec\n", __FUNCTION__, execTime/count);
+	execTime = 0.f;
+}
+inline void addExecTime(double timeValue){
+	execTime+= timeValue;
+}
+
+inline uint8 PLC_TaskExecutor_enterMCLegion(uint8 state)
+{
+	STACK_push(&currStatus.stackOnMCState, state);
+	//PLC_TaskExecutor_printMCStates();
+	return TRUE;
+}
+
+inline uint8 PLC_TaskExecutor_turnOffMCLegion(uint8 state)
+{
+	STACK_push(&currStatus.stackOffMCState, state);
+	//PLC_TaskExecutor_printMCStates();
+	return TRUE;
+}
+
+inline uint8 PLC_TaskExecutor_exitMCLegion(uint8 state)
+{
+	if(state == STACK_pick(&currStatus.stackOnMCState))
+	{
+		STACK_pull(&currStatus.stackOnMCState);
+		//PLC_TaskExecutor_printMCStates();
+		return TRUE;
+	}
+	else if (state == STACK_pick(&currStatus.stackOffMCState))
+	{
+		STACK_pull(&currStatus.stackOffMCState);
+		//PLC_TaskExecutor_printMCStates();
+		return TRUE;
+	}
+	return FALSE;
+}
+
+inline uint8 PLC_TaskExecutor_isMCOn()
+{
+	return (currStatus.stackOffMCState.size == 0);
+}
+inline void PLC_TaskExecutor_printMCStates()
+{
+	int i;
+	if(currStatus.stackOnMCState.size>0)
+	{
+		DBG_LOGPRINT("MC ON state : ");
+
+		for( i = 0 ; i< currStatus.stackOnMCState.size; i++)
+		{
+			DBG_LOGPRINT("[%d]%d |", i, currStatus.stackOnMCState.stack[i]);
+		}
+		DBG_LOGPRINT("\n");
+	}
+	else DBG_LOGPRINT("MC ON stack cleared!\n");
+	if(currStatus.stackOffMCState.size>0)
+	{
+		DBG_LOGPRINT("MC OFF state : ");
+		for( i = 0 ; i< currStatus.stackOffMCState.size; i++)
+		{
+			DBG_LOGPRINT("[%d]%d |", i, currStatus.stackOffMCState.stack[i]);
+		}
+		DBG_LOGPRINT("\n");
+	}
+	else DBG_LOGPRINT("MC OFF stack cleared!\n");
+}
+

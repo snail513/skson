@@ -1,0 +1,14 @@
+/*
+ * PLC_ModuleRegister.h
+ *
+ *  Created on: 2016. 2. 5.
+ *      Author: skson
+ */
+
+#ifndef PLC_MODULEREGISTER_H_
+#define PLC_MODULEREGISTER_H_
+
+uint8 PLC_ModuleRegister_set(uint8 moduleIdx, uint16 moduleAddress, uint16* src);
+uint8 PLC_ModuleRegister_get(uint8 moduleIdx, uint16 moduleAddress, uint16* dst);
+
+#endif /* PLC_MODULEREGISTER_H_ */

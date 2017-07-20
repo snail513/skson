@@ -1,0 +1,4 @@
+cross-GCC compiler 사용 방법
+
+makefile_TS : cunit - intel 실행 파일
+makefile_CC : cross-compiled 실행 파일

@@ -1,0 +1,98 @@
+/*
+ * PLC_TimeScanManager.c
+ *
+ *  Created on: 2015. 11. 9.
+ *      Author: skson
+ */
+#ifndef PLC_TIMESCANMANAGER_H_
+#include "PLC_TimeScanManager.h"
+#include "PLC_OperatorDictionary.h"
+#include <unistd.h>
+#include <time.h>
+#endif
+
+#define SCANTIME_MANAGER TRUE
+#define MAX_BUFFUR_SIZE 500
+#define CUTOFF_BUFFUR_SIZE 400
+#define SCANLOG_FILENAME "./scanfile"
+static int currLogFileIdx = 0;
+static char buf[MAX_BUFFUR_SIZE];
+static int countFileWrite=0;
+
+typedef enum{
+	Starting,
+	Running,
+	Ending,
+	Waiting
+}ScanState;
+
+
+static timespec_t nstart, nstop;
+
+void PLC_TimeScanManager_outToFile(){
+	FILE* file = fopen(SCANLOG_FILENAME,"a");
+	if(!file)
+	{
+		DBG_LOGPRINT("[PLC_TimeScanManager_outToFile] Cannot open time-log file !\n");
+		return ;
+	}
+	//printf(file);
+	fprintf(file, buf);
+	memset(buf, 0, MAX_BUFFUR_SIZE);
+	fclose(file);
+	DBG_LOGPRINT("[PLC_TimeScanManager_outToFile] Added to file !\n");
+}
+
+void PLC_TimeScanManager_checkFileSize(){
+
+}
+
+void PLC_TimeScanManager_notifyExecStart(){
+#if SCANTIME_MANAGER
+	clock_gettime(CLOCK_REALTIME, &nstart);
+#endif
+}
+
+void PLC_TimeScanManager_notifyExecEnd(){
+#if SCANTIME_MANAGER
+	clock_gettime(CLOCK_REALTIME, &nstop);
+	//uint32 sec = nstop.tv_sec - nstart.tv_sec;
+	uint32 nsec = nstop.tv_nsec- nstart.tv_nsec;
+	//printf("%lu s, %lu ns\n", sec, nsec);
+	//ScanTimeLog_AddLog(PLC_TaskExecutor_getCurrOperator(), nsec);
+#endif
+}
+
+void PLC_TimeScanManager_notifyExecEnd_temp(char* symbol){
+#if SCANTIME_MANAGER
+	clock_gettime(CLOCK_REALTIME, &nstop);
+	uint32 nsec = nstop.tv_nsec- nstart.tv_nsec;
+	sprintf(buf, "[%s]\t%lu\n", symbol, nsec);
+	char bufFileName[100];
+
+
+	FILE* file = fopen(bufFileName,"a");
+
+	char* val = "a";
+	if(file==NULL)
+	fclose(file);
+	file = fopen(bufFileName, val);
+
+	if(!file)
+	{
+		DBG_LOGPRINT("[PLC_TimeScanManager_outToFile] Cannot open time-log file !\n");
+		return ;
+	}
+
+	fprintf(file, buf);
+	if( countFileWrite> 10000)
+		currLogFileIdx++;
+	fclose(file);
+
+	memset(buf, 0, MAX_BUFFUR_SIZE);
+
+	//DBG_LOGPRINT("[PLC_TimeScanManager_outToFile] Added to file !\n");
+
+
+#endif
+}

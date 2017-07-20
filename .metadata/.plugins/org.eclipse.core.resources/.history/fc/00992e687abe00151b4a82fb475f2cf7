@@ -1,0 +1,8 @@
+test case 143 error cmd=BMLT in_D[0] out_B[0]=0 exp=117466706 Z[7]=1024
+test case 143 error cmd=BMLT in_W[0] out_B[0]=0 exp=117466706 Z[7]=1024
+test case 173 error cmd=BMLTP in_D[0] out_B[0]=0 exp=117466706 Z[7]=1024
+test case 173 error cmd=BMLTP in_W[0] out_B[0]=0 exp=117466706 Z[7]=1024
+test case 203 error cmd=BDIV in_D[0] out_B[0]=0 exp=121765892 Z[7]=1024
+test case 203 error cmd=BDIV in_W[0] out_B[0]=0 exp=121765892 Z[7]=1024
+test case 233 error cmd=BDIVP in_D[0] out_B[0]=0 exp=121765892 Z[7]=1024
+test case 233 error cmd=BDIVP in_W[0] out_B[0]=0 exp=121765892 Z[7]=1024

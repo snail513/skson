@@ -1,0 +1,74 @@
+/*
+ * PLC_DeviceExecutor.h
+ *
+ *  Created on: 2015. 2. 13.
+ *      Author: skson
+ */
+
+#ifndef PLC_TaskExecutor_H_
+#define PLC_TaskExecutor_H_
+#include "PLC_Definitions.h"
+#include "PLC_Device.h"
+#include "PLC_Point.h"
+
+typedef struct{
+	uint16 currOperator ;
+	uint8 currTaskIdx ;
+	uint32 currTaskPos ;
+	uint16 currMCValue ;
+
+	PLC_Device_Stack stackMCLabel;
+	PLC_Device_Stack stackMCState;
+
+	EventFlag currTaskPriority ;
+}PLC_TaskExecutor;
+void PLC_TaskExecutor_recoverTaskState();
+void PLC_TaskExecutor_preserveTaskState();
+EventFlag PLC_TaskExecutor_getCurrPriority();
+
+uint8 PLC_TaskExecutor_getCurrTaskIdx();
+uint16 PLC_TaskExecutor_getCurrOperator();
+void setMemSize(int setMemSize);
+int getMemSize();
+void setWatchMode(char isWatchMode);
+char isWatchMode();
+uint8 PLC_TaskExecutor_setCurrPoint(uint8 taskIdx, uint32 taskPos);
+PLC_Device* PLC_TaskExecutor_getDevice();
+
+uint8 PLC_TaskExecutor_execOneScanTime(uint8 taskIdx, uint32 currPos, EventFlag priority);
+uint8 PLC_TaskExecutor_reloadTask(uint8 internalInstructions[], int instructionMemorySize, int taskIdx, LaunchingCondition condition);
+uint8 PLC_TaskExecutor_execInterruption(
+		uint8 interruptionFlag,
+		uint16* pos,
+		const char* functionName,
+		int line);
+/*
+uint8 PLC_TaskExecutor_execWithDeviceControl(
+		PLC_DEVICE_Controller* controller ,
+		int scanTimeInterval);
+*/
+uint8 PLC_TaskExecutor_execWithDeviceControl_Test(
+		int timeInterval,
+		int scanTimeInterval
+		);
+/*Recommending functions*/
+uint8 PLC_TaskExecutor_init();
+uint8 PLC_TaskExecutor_exec(
+		int scanTimeDelay);
+/****************************/
+
+void PLC_TaskExecutor_progressTime();
+
+uint8 PLC_TaskExecutor_readFromFileToBuffer(char* filePathName, char buffer[]);
+uint8 PLC_TaskExecutor_readFromFilesToBuffer(char* filePathName[], uint8 fileCount, char buffer[]);
+
+PLC_DEVICE_Controller* PLC_TaskExecutor_readFromFileToControl();
+
+uint8 parseToControlBuffer(char* srcLine, PLC_DEVICE_ControlInstruction* control);
+void printExecTimeOfScanTime();
+void addExecTime(double timeValue);
+
+void PLC_TaskExecutor_enterMCLegion();
+
+
+#endif /* PLC_TaskExecutor_H_ */

@@ -1,0 +1,37 @@
+/*
+ ============================================================================
+ Name        : MergeSort.c
+ Author      : 
+ Version     :
+ Copyright   : Your copyright notice
+ Description : Hello World in C, Ansi-style
+ ============================================================================
+ */
+/* c program for heap sorting method*/
+
+#include <stdio.h>
+
+unsigned char sort(void* arr, int dataSize, int byteSize)
+{
+	if(byteSize == 2)
+	{
+
+	}
+	else if(byteSize == 4)
+	{
+
+	}
+	else
+		return 0;
+}
+
+unsigned char merge()
+{
+
+}
+
+int main()
+{
+
+}
+

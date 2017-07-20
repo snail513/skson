@@ -1,0 +1,8 @@
+
+**** Clean-only build of configuration Debug for project MergeSort ****
+
+make clean 
+rm -rf  ./src/MergeSort.o  ./src/MergeSort.d  MergeSort
+ 
+
+**** Build Finished ****

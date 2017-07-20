@@ -1,0 +1,79 @@
+/*
+ * PLC_IL_Task.h
+ *
+ *  Created on: 2014. 12. 23.
+ *      Author: skson
+ */
+
+#ifndef PLC_IL_TASK_H_
+#define PLC_IL_TASK_H_
+#include "PLC_Definitions.h"
+
+#define PLC_IL_TASK_MAXCOUNT 32
+#define PLC_STEP_MAX_COUNT 10240
+#define PLC_STEP_MAX_CMDCOUNT PLC_STEP_MAX_COUNT*PLC_IL_TASK_MAXCOUNT
+#define CURRVAL_NEUTRON 2
+
+//////////////////////////////////////////////
+
+////////////////////////////////////////////
+typedef struct{
+	LaunchingCondition nLaunchingCondition;
+	//uint32 nTaskStartingPoint;
+	uint32 cmdPosList[PLC_STEP_MAX_CMDCOUNT];
+
+	uint32 lungPosList[PLC_STEP_MAX_COUNT];
+	uint32 nCurrStepCount;
+	uint32 nCurrCMDCount;
+	uint32 nCurrEndPos;
+
+	uint32 nCurrCMDPos;
+	uint8 bitValueCurrList[PLC_STEP_MAX_CMDCOUNT];
+	uint8 taskML[INSTRUCTION_MEMORY_TASK_SIZE];
+} PLC_IL_Task;
+
+typedef struct{
+
+	PLC_IL_Task list[PLC_IL_TASK_MAXCOUNT ];
+	uint32 nTaskCount;
+	uint32 nCurrTaskIdx;
+	uint8 taskOrder[PLC_IL_TASK_MAXCOUNT];
+} PLC_IL_Task_List;
+
+uint8 TaskList_MPSBranch(uint8 val);//MPS
+uint8 TaskList_MRDBranch(uint8 *val);//MRD
+uint8 TaskList_MPPBranch(uint8 *val);//MPP
+
+uint32 binarySearch(uint32 array[], uint32 arraySize, uint32 search);
+
+void TaskList_init();
+void TaskList_setOrder(uint8 taskOrder[]);
+uint8 TaskList_getOrder(uint8* taskIdx, uint8 taskOrder);
+PLC_IL_Task_List* TaskList_getInstance();
+uint32 TaskList_getCurrTaskEnd(uint32 currPos);
+uint32 TaskList_getTaskSize(uint8 taskIdx);
+uint8 TaskList_addTask(uint8 instruction[], uint32 endPos, LaunchingCondition condition, uint8 taskIdx);
+uint8 TaskList_AddJumpingPoint();
+uint8* TaskList_getTaskHead(uint8 index);
+uint8 TaskList_getTaskCMDValue(uint32 pos);
+uint8 TaskList_setTaskCMDValue(uint8 taskIdx, uint32 pos, uint8 bitVal);
+
+//uint8 TaskList_getCount();
+//uint8 TaskList_getCMDCount(uint8 taskIdx);
+//uint8 TaskList_getCMDPosition(uint8 taskIdx, uint16 cmdIdx);
+//uint8 TaskList_isAlways(uint8 index);
+//uint8 TaskList_isAlarm(uint8 index);
+//uint8 TaskList_isInterruption(uint8 index);
+uint8 Task_loadTasksFromBuffers(uint8 buffer[], int bufSize, uint8 taskIdx, LaunchingCondition condition);
+uint8 TaskList_addCMDHeadPos(uint8 taskIdx,uint16 pos);
+uint8 TaskList_addLungHeadPos(uint8 taskIdx,uint16 pos);
+uint8 TaskList_changeLaunchingCondition(uint8 taskIdx, LaunchingCondition condition);
+
+#define TaskList_getCount() (TaskList_getInstance()->nTaskCount)
+#define TaskList_getCMDCount(taskIdx) (TaskList_getInstance()->list[taskIdx].nCurrCMDCount)
+#define TaskList_getCMDPosition(taskIdx, cmdIdx) (TaskList_getInstance()->list[taskIdx].cmdPosList[cmdIdx])
+#define TaskList_isAlways(taskIdx) (TaskList_getInstance()->list[taskIdx].nLunchingCondition ==CONDITION_ALWAYS_EXEC)
+#define TaskList_isAlarm(index) (TaskList_getInstance()->list[taskIdx].nLunchingCondition ==CONDITION_ALARM_EXEC);
+#define TaskList_isInterruption(index) (TaskList_getInstance()->list[taskIdx].nLunchingCondition ==CONDITION_INTERRUPTION_EXEC)
+
+#endif /* PLC_IL_TASK_H_ */

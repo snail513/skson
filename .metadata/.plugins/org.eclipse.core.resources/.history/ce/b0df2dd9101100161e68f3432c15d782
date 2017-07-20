@@ -1,0 +1,26 @@
+/*
+ * test_baseFunctions.c
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#include "test_baseFunctions.h"
+#endif
+
+static uint8 operandCount = 0;
+static uint8 pulseTest = 0;
+
+uint8 generalTest( uint16 operatorMLCode , uint8 isPulseTest)
+{
+	operandCount = PLC_OPERATOR_DICTIONARY_findOperator(operatorMLCode)->nOperandPosCount;
+	pulseTest = isPulseTest;
+	return TRUE;
+}
+
+uint8 generalTest_init()
+{
+	PLC_DEVICE_Init();
+
+}

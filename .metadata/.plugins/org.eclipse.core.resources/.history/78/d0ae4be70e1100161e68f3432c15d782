@@ -1,0 +1,21 @@
+/*
+ * test_baseFunctions.c
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#include "test_baseFunctions.h"
+#endif
+typedef enum{
+	RESULT_BIT = 0,
+	RESULT_WORD,
+	RESULT_DWORD,
+	RESULT_FLOAT,
+	RESULT_DOUBLE,
+	RESULT_BLOCK,
+	RESULT_DWORD_BLOCK,
+	RESULT_STRING,
+}TestBaseFunction_ResultType;
+

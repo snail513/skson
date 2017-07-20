@@ -1,0 +1,30 @@
+/*
+ * test_baseFunctions.c
+ *
+ *  Created on: 2016. 5. 3.
+ *      Author: skson
+ */
+
+#ifndef TEST_BASEFUNCTIONS_H_
+#include "test_baseFunctions.h"
+#endif
+static uint8 step = 1;
+static char* testName;
+uint8 TestBaseFunction_setTestInput(char* testName, void* IL_setFunction, void* input_setFunction)
+{
+
+}
+uint8 TestBaseFunction_setTestResult(uint8 outputType)
+{
+
+}
+uint8 TestBaseFunction_setTestVariable(uint16 operatorMLCode)
+{
+
+}
+uint8 TestBaseFunction_execTest()
+{
+	PLC_DEVICE_Init();
+	runTestCode(step, testName);
+}
+

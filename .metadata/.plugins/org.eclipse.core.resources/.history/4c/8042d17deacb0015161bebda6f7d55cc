@@ -1,0 +1,25 @@
+/*
+ * PLC_ModuleRegister.h
+ *
+ *  Created on: 2016. 2. 5.
+ *      Author: skson
+ */
+
+#ifndef PLC_MODULEREGISTER_H_
+#define PLC_MODULEREGISTER_H_
+#include "PLC_Definitions.h"
+
+
+uint8 PLC_ModuleRegister_set(uint8 moduleIdx, uint16 moduleAddress, uint16 src);
+uint8 PLC_ModuleRegister_get(uint8 moduleIdx, uint16 moduleAddress, uint16* dst);
+uint8 PLC_ModuleRegister_setFloat(uint8 moduleIdx, uint16 moduleAddress, float src);
+uint8 PLC_ModuleRegister_getFloat(uint8 moduleIdx, uint16 moduleAddress, float* dst);
+uint8 PLC_ModuleRegister_setDoubule(uint8 moduleIdx, uint16 moduleAddress, double src);
+uint8 PLC_ModuleRegister_getDoubule(uint8 moduleIdx, uint16 moduleAddress, double* dst);
+uint8 PLC_ModuleRegister_setInt(uint8 moduleIdx, uint16 moduleAddress, uint32 src);
+uint8 PLC_ModuleRegister_getInt(uint8 moduleIdx, uint16 moduleAddress, uint32* dst);
+uint8 PLC_ModuleRegister_setLong(uint8 moduleIdx, uint16 moduleAddress, long long src);
+uint8 PLC_ModuleRegister_getLong(uint8 moduleIdx, uint16 moduleAddress, long long* dst);
+
+
+#endif /* PLC_MODULEREGISTER_H_ */

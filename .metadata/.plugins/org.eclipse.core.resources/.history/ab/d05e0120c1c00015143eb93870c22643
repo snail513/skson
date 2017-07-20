@@ -1,0 +1,198 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+C_SRCS += \
+../PLC_NEW_Simulator/src/test/test_Op1_template.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_blk.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_float.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_float_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_div.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_arithmetic_str.c \
+../PLC_NEW_Simulator/src/test/test_basic_comapre_dword_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_double.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_double_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_dword.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_dword_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_dword_blk.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_float.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_float_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_str.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_word.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_word_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_word_blk.c \
+../PLC_NEW_Simulator/src/test/test_basic_compare_word_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_control.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_dword.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_dword_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_dword_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_extra.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_float.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_float_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_word_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_conversion_word_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_blk.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_dword.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_dword_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_dword_index.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_extra.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_word_NB.c \
+../PLC_NEW_Simulator/src/test/test_basic_transfer_word_index.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_bit.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_blk.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_dword.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_extra.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_float.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_str.c \
+../PLC_NEW_Simulator/src/test/test_runtime_error_word.c \
+../PLC_NEW_Simulator/src/test/test_sequence_cmd.c \
+../PLC_NEW_Simulator/src/test/test_sequence_extra.c \
+../PLC_NEW_Simulator/src/test/test_sequence_wb2wb.c \
+../PLC_NEW_Simulator/src/test/test_sequence_wordbit.c 
+
+OBJS += \
+./PLC_NEW_Simulator/src/test/test_Op1_template.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_blk.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_float.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_float_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_div.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_str.o \
+./PLC_NEW_Simulator/src/test/test_basic_comapre_dword_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_double.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_double_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_dword.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_dword_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_dword_blk.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_float.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_float_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_str.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word_blk.o \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_control.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_dword.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_dword_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_dword_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_extra.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_float.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_float_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_word_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_word_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_blk.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_dword.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_dword_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_dword_index.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_extra.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_word_NB.o \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_word_index.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_bit.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_blk.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_dword.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_extra.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_float.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_str.o \
+./PLC_NEW_Simulator/src/test/test_runtime_error_word.o \
+./PLC_NEW_Simulator/src/test/test_sequence_cmd.o \
+./PLC_NEW_Simulator/src/test/test_sequence_extra.o \
+./PLC_NEW_Simulator/src/test/test_sequence_wb2wb.o \
+./PLC_NEW_Simulator/src/test/test_sequence_wordbit.o 
+
+C_DEPS += \
+./PLC_NEW_Simulator/src/test/test_Op1_template.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_blk.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_dword_mul_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_float.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_float_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_div.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_mul_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_arithmetic_str.d \
+./PLC_NEW_Simulator/src/test/test_basic_comapre_dword_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_double.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_double_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_dword.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_dword_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_dword_blk.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_float.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_float_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_str.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word_blk.d \
+./PLC_NEW_Simulator/src/test/test_basic_compare_word_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_control.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_dword.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_dword_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_dword_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_extra.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_float.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_float_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_word_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_conversion_word_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_blk.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_dword.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_dword_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_dword_index.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_extra.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_word_NB.d \
+./PLC_NEW_Simulator/src/test/test_basic_transfer_word_index.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_bit.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_blk.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_dword.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_extra.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_float.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_str.d \
+./PLC_NEW_Simulator/src/test/test_runtime_error_word.d \
+./PLC_NEW_Simulator/src/test/test_sequence_cmd.d \
+./PLC_NEW_Simulator/src/test/test_sequence_extra.d \
+./PLC_NEW_Simulator/src/test/test_sequence_wb2wb.d \
+./PLC_NEW_Simulator/src/test/test_sequence_wordbit.d 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+PLC_NEW_Simulator/src/test/%.o: ../PLC_NEW_Simulator/src/test/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C Compiler'
+	gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+

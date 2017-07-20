@@ -1,0 +1,44 @@
+
+**** Build of configuration Debug for project WaveSensorMachineLearning ****
+
+make all 
+Building file: ../src/WaveSensor.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/WaveSensor.d" -MT"src/WaveSensor.d" -o "src/WaveSensor.o" "../src/WaveSensor.c"
+../src/WaveSensor.c: In function ‘WaveSensor_run’:
+../src/WaveSensor.c:66:3: warning: passing argument 2 of ‘JudgeModel_isError’ from incompatible pointer type [enabled by default]
+   error_rate = JudgeModel_isError(ERROR_VALUE, curr_input);
+   ^
+In file included from ../src/../header/WaveSensor.h:11:0,
+                 from ../src/WaveSensor.c:9:
+../src/../header/JudgeModel.h:44:5: note: expected ‘const float (*)[3]’ but argument is of type ‘float (*)[3]’
+ int JudgeModel_isError(float errorJudgementValue, const float tar[FFT_SIZE][AXIS_SIZE] );
+     ^
+../src/WaveSensor.c: In function ‘waveSensorTest’:
+../src/WaveSensor.c:78:2: warning: implicit declaration of function ‘printf’ [-Wimplicit-function-declaration]
+  printf("pid=%d\n", getpid());
+  ^
+../src/WaveSensor.c:78:2: warning: incompatible implicit declaration of built-in function ‘printf’ [enabled by default]
+../src/WaveSensor.c:78:2: warning: implicit declaration of function ‘getpid’ [-Wimplicit-function-declaration]
+../src/WaveSensor.c:83:51: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+Finished building: ../src/WaveSensor.c
+ 
+   pthread_create(&threads[i], NULL, &thread_main, (void *)i);
+                                                   ^
+../src/WaveSensor.c:84:3: warning: format ‘%d’ expects argument of type ‘int’, but argument 3 has type ‘pthread_t’ [-Wformat=]
+Building target: WaveSensorMachineLearning
+Invoking: GCC C Linker
+gcc  -o "WaveSensorMachineLearning"  ./src/JudgeModel.o ./src/WaveSensor.o ./src/WaveSensorMachineLearning.o ./src/fft.o   -lm -lpthread
+   printf("[IDX]%d, [pthread_t]%d\n", i, threads[i]);
+   ^
+../src/WaveSensor.c: At top level:
+../src/WaveSensor.c:34:12: warning: ‘over_value’ defined but not used [-Wunused-variable]
+ static int over_value;
+            ^
+../src/WaveSensor.c:36:12: warning: ‘under_value’ defined but not used [-Wunused-variable]
+ static int under_value;
+            ^
+Finished building target: WaveSensorMachineLearning
+ 
+
+**** Build Finished ****

@@ -1,0 +1,24 @@
+test case 6 error cmd=40 out_D[0].1  exp=1
+test case 6 error cmd=40 out_D[0].7  exp=1
+test case 6 error cmd=40 out_D[0].8  exp=1
+test case 6 error cmd=40 out_D[0].14  exp=1
+test case 8 error cmd=40 out_D[0].2
+test case 8 error cmd=40 out_D[0].8
+test case 8 error cmd=40 out_D[0].9
+test case 8 error cmd=40 out_D[0].15
+test case 9 error cmd=40 out_D[0].2
+test case 9 error cmd=40 out_D[0].8
+test case 9 error cmd=40 out_D[0].9
+test case 9 error cmd=40 out_D[0].15
+test case 18 error cmd=MPS in_X[4096] out_D[0]
+test case 18 error cmd=MPS in_X[4096] out_D[0]
+test case 18 error cmd=MPS in_X[4096] out_D[0]
+test case 18 error cmd=MPS in_X[4096] out_D[0]
+test case 19 error cmd=MPS in_X[4096] out_D[0]
+test case 19 error cmd=MPS in_X[4096] out_D[0]
+test case 19 error cmd=MPS in_X[4096] out_D[0]
+test case 19 error cmd=MPS in_X[4096] out_D[0]
+test case 25 error cmd=MPS in_X[4096] out_D[0]
+test case 25 error cmd=MPS in_X[4096] out_D[0]
+test case 25 error cmd=MPS in_X[4096] out_D[0]
+test case 25 error cmd=MPS in_X[4096] out_D[0]

@@ -1,0 +1,52 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+typedef enum
+{
+	none = 0,
+	srcbit,
+	srcWord,
+	srcDWord,
+	srcFloat,
+	srcDouble,
+	dstbit,
+	dstWord,
+	dstDWord,
+	dstFloat,
+	dstDouble,
+	cnt
+}TestType;
+
+typedef struct
+{
+	uint8 operandCount;
+	TestType operands[5];
+}OperandStruct;
+
+static OperandStruct currStruct;
+
+uint8 setOperandStruct(uint8 operandCount, TestType t[])
+{
+	currStruct.operandCount = operandCount;
+	currStruct.operands[0] = t0;
+	currStruct.operands[1] = t1;
+	currStruct.operands[2] = t2;
+	currStruct.operands[3] = t3;
+	currStruct.operands[4] = t4;
+}
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

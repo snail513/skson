@@ -1,0 +1,17 @@
+/*
+ * AddTest.h
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+#ifndef ADDTEST_H_
+#define ADDTEST_H_
+#include "../PLC_ListOfTestSuite.h"
+
+uint8 test_setOperator(uint16 operatorML);
+uint8 test_setIL();
+uint8 test_setRegInput();
+uint8 test_main(int argc, char* argv[]);
+
+#endif /* ADDTEST_H_ */

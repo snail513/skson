@@ -1,0 +1,149 @@
+/*
+ * PLC_Register_Log.c
+ *
+ *  Created on: 2015. 4. 1.
+ *      Author: skson
+ */
+
+#ifndef PLC_REGISTER_LOG_H_
+#include "PLC_Register_Log.h"
+#endif
+#include "PLC_OperandDictionary.h"
+#include <stdlib.h>
+
+static QueueLog log;
+static uint8 flagLogWrite = FALSE;
+
+inline void QueueLog_Init(){
+
+	log.count = 0;
+	log.headPos = 0;
+	log.tailPos = 1;
+	memset(log.logs, 0, sizeof(log.logs));
+	//printf("[Register Log] init complete.\n");
+
+}
+
+
+inline uint8 QueueLog_AddLog(uint8 operandML, uint16 addr, uint16 oldValue, uint16 newValue, uint32 changedScanCount){
+	//printf("[REG] %d\n",__LINE__);
+	if(!flagLogWrite)
+		return TRUE;
+	if(log.count>= CHANGED_LOG_SIZE)
+	{
+		log.count--;
+		log.headPos+=1;
+		log.headPos%=1024;
+	}
+	uint32 currLogIdx = log.tailPos;
+	log.logs[currLogIdx].changedScanCount = changedScanCount;
+	log.logs[currLogIdx].operandAddr = addr;
+	log.logs[currLogIdx].operandML= operandML;
+	log.logs[currLogIdx].operandNewValue = newValue;
+	log.logs[currLogIdx].operandOldValue = oldValue;
+	log.count++;
+	log.tailPos++;
+	log.tailPos%=1024;
+	return TRUE;
+}
+
+inline LogChanged* QueueLog_getLog(uint8 operandML, uint16 addr,uint32 changedScanCount){
+	//LogChanged *currLog = &(log.logs[log.headPos]);
+
+	uint32 idx;
+	for(idx=0; idx<log.count;idx++){
+		LogChanged *currLog = (LogChanged*)&(log.logs[log.headPos%1024]);
+		if(currLog->changedScanCount>changedScanCount)
+			return NULL;
+		if(currLog->changedScanCount<changedScanCount)
+			continue;
+		if(currLog->operandML == operandML && currLog->operandAddr == addr )
+			return currLog;
+	}
+	return NULL;
+
+}
+inline uint8 ClearFromThisLog(LogChanged* thisLog){
+	/*if(thisLog==NULL){
+		//printf("[Register Log] Register Log Queue is full!\n");
+		return FALSE;
+	}
+
+	if(thisLog->next!=0)
+	{
+		ClearFromThisLog((LogChanged*)thisLog->next);
+	}
+	free(thisLog);
+*/
+	return TRUE;
+}
+
+inline void QueueLog_print()
+{
+	if(!flagLogWrite)
+		return ;
+	//LogChanged *curr= log.head;
+	DBG_LOGPRINT("[REG] [queue size]%d\n", log.count);
+	int idx;
+	for(idx=0; idx<log.count;idx++)
+	{
+		LogChanged *curr = (LogChanged*)&(log.logs[log.headPos%1024]);
+		DBG_LOGPRINT("[REG] [%2s%4d] [T%4d] %4X -> %4X\n", opndic[curr->operandML].strType, curr->operandAddr,curr->changedScanCount, curr->operandOldValue, curr->operandNewValue);
+	}
+}
+
+inline void QueueLog_save(char* saveFileName)
+{
+	if(!flagLogWrite)
+			return ;
+	int i;
+	if(saveFileName == NULL)
+	{
+		saveFileName = "queueLog.blg";
+		DBG_LOGPRINT("save result as %s\n", saveFileName);
+	}
+	//FILE* file = fopen(saveFileName, "wb");
+	FILE* file = fopen(saveFileName, "wb");
+	if(!file)
+		return ;
+	/*
+	 * LogChanged* head;
+	LogChanged* tail;
+	uint8 count;
+	 */
+
+	//LogChanged * currLog = log.head;
+	//printf("l count = %d\n", log.count);
+
+	fwrite(&(log.count), 1, sizeof(int), file);
+
+	for(i=0;i<log.count;i++)
+	{
+		LogChanged *currLog = (LogChanged*)&(log.logs[log.headPos%1024]);
+		//currLog = currLog->next;
+		fwrite((void*)&currLog->changedScanCount, 1, sizeof(currLog->changedScanCount), file);
+		fwrite((void*)&currLog->operandML, 1, sizeof(currLog->operandML), file);
+		fwrite((void*)&currLog->operandAddr, 1, sizeof(currLog->operandAddr), file);
+		fwrite((void*)&currLog->operandNewValue, 1, sizeof(currLog->operandNewValue), file);
+	}
+	/*char buf[300];
+	sprintf(buf, "size : %d\n", log.count);
+
+	fputs(buf, file);
+	for(i=0;i<log.count;i++)
+	{
+		currLog = currLog->next;
+
+		memset(buf, 0, 300);
+		sprintf(buf, "[REG] [%2s%4d] [T%4d] %4X -> %4X\n",
+				opndic[currLog->operandML].strType,
+				currLog->operandAddr,
+				currLog->changedScanCount,
+				currLog->operandOldValue,
+				currLog->operandNewValue);
+
+		fwrite(buf, 1, strlen(buf)+1, file);
+	}*/
+	fclose(file);
+
+}

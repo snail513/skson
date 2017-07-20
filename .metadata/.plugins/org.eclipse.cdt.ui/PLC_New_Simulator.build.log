@@ -1,0 +1,212 @@
+
+**** Build of configuration Debug for project PLC_New_Simulator ****
+
+make all 
+Building file: ../src/PLC_ListOfTestSuite.c
+Invoking: GCC C Compiler
+gcc -DUSE_CUNIT_TEST_DEF -DUSE_CUNIT_DEF -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/PLC_ListOfTestSuite.d" -MT"src/PLC_ListOfTestSuite.d" -o "src/PLC_ListOfTestSuite.o" "../src/PLC_ListOfTestSuite.c"
+In file included from ../src/PLC_Operator.h:10:0,
+                 from ../src/PLC_OperatorDictionary.h:11,
+                 from ../src/PLC_ListOfTestSuite.h:10,
+                 from ../src/PLC_ListOfTestSuite.c:9:
+../src/PLC_OperandDictionary.h:107:4: warning: initialization makes pointer from integer without a cast [enabled by default]
+    ,{OPERAND_ML_CODE_Zin, 0, FALSE, OPND_DIC_TYPE_WORD, OPERAND_ML_CODE_Zin}
+    ^
+../src/PLC_OperandDictionary.h:107:4: warning: (near initialization for ‘opndic[25].strType’) [enabled by default]
+../src/PLC_ListOfTestSuite.c:229:8: warning: "/*" within comment [-Wcomment]
+  512 ,//*P
+ ^
+../src/PLC_ListOfTestSuite.c: In function ‘run_suite_EXEC_SUITE’:
+../src/PLC_ListOfTestSuite.c:1490:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::SRCH(P)", ATest_Srch);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1491:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::CHKSUM(P)", ATest_Sum);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1492:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::MAX(P)", ATest_Max);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1493:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::MIN(P)", ATest_Min);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1495:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::SORT(P)", ATest_Sort);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+Finished building: ../src/PLC_ListOfTestSuite.c
+ 
+Building target: PLC_New_Simulator
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1496:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+Invoking: GCC C Linker
+gcc  -o "PLC_New_Simulator"  ./src/testPlatform/PLC_Platform.o  ./src/test/test_Op1_template.o ./src/test/test_basic_arithmetic.o ./src/test/test_basic_arithmetic_NB.o ./src/test/test_basic_arithmetic_blk.o ./src/test/test_basic_arithmetic_dword.o ./src/test/test_basic_arithmetic_dword_NB.o ./src/test/test_basic_arithmetic_dword_index.o ./src/test/test_basic_arithmetic_dword_mul.o ./src/test/test_basic_arithmetic_dword_mul_NB.o ./src/test/test_basic_arithmetic_dword_mul_index.o ./src/test/test_basic_arithmetic_float.o ./src/test/test_basic_arithmetic_float_index.o ./src/test/test_basic_arithmetic_index.o ./src/test/test_basic_arithmetic_mul_NB.o ./src/test/test_basic_arithmetic_mul_div.o ./src/test/test_basic_arithmetic_mul_index.o ./src/test/test_basic_arithmetic_str.o ./src/test/test_basic_comapre_dword_index.o ./src/test/test_basic_compare_double.o ./src/test/test_basic_compare_double_index.o ./src/test/test_basic_compare_dword.o ./src/test/test_basic_compare_dword_NB.o ./src/test/test_basic_compare_dword_blk.o ./src/test/test_basic_compare_float.o ./src/test/test_basic_compare_float_index.o ./src/test/test_basic_compare_str.o ./src/test/test_basic_compare_word.o ./src/test/test_basic_compare_word_NB.o ./src/test/test_basic_compare_word_blk.o ./src/test/test_basic_compare_word_index.o ./src/test/test_basic_control.o ./src/test/test_basic_conversion.o ./src/test/test_basic_conversion_dword.o ./src/test/test_basic_conversion_dword_NB.o ./src/test/test_basic_conversion_dword_index.o ./src/test/test_basic_conversion_extra.o ./src/test/test_basic_conversion_float.o ./src/test/test_basic_conversion_float_index.o ./src/test/test_basic_conversion_word_NB.o ./src/test/test_basic_conversion_word_index.o ./src/test/test_basic_transfer.o ./src/test/test_basic_transfer_blk.o ./src/test/test_basic_transfer_dword.o ./src/test/test_basic_transfer_dword_NB.o ./src/test/test_basic_transfer_dword_index.o ./src/test/test_basic_transfer_extra.o ./src/test/test_basic_transfer_word_NB.o ./src/test/test_basic_transfer_word_index.o ./src/test/test_runtime_error_bit.o ./src/test/test_runtime_error_blk.o ./src/test/test_runtime_error_dword.o ./src/test/test_runtime_error_extra.o ./src/test/test_runtime_error_float.o ./src/test/test_runtime_error_str.o ./src/test/test_runtime_error_word.o ./src/test/test_sequence_cmd.o ./src/test/test_sequence_extra.o ./src/test/test_sequence_wb2wb.o ./src/test/test_sequence_wordbit.o  ./src/additionalTest/AT_SpecialTest.o ./src/additionalTest/AT_Srch.o ./src/additionalTest/AddTest.o  ./src/PLC_Device.o ./src/PLC_DeviceStack.o ./src/PLC_EventHandler.o ./src/PLC_ExecFunctions.o ./src/PLC_IL_Task.o ./src/PLC_InterruptionModule.o ./src/PLC_ListOfTestSuite.o ./src/PLC_Log.o ./src/PLC_NEW_Simulator.o ./src/PLC_Operand.o ./src/PLC_OperandDictionary.o ./src/PLC_Operator.o ./src/PLC_OperatorDictionary.o ./src/PLC_Point.o ./src/PLC_PointTable.o ./src/PLC_PreExecFunctions.o ./src/PLC_RealDevice.o ./src/PLC_Register.o ./src/PLC_Register_Log.o ./src/PLC_TaskExecutor.o ./src/PLC_TimeScanManager.o ./src/crc16.o  ./PLC_Main/PLCMain.o   -lcunit
+  CU_add_test(pSuite, "Additional Test::LIMIT(P)", ATest_Limit);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1497:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::BAND(P)", ATest_Band);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1498:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::ZONE(P)", ATest_Zone);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1500:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::SECOND(P)", ATest_Second);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1501:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::HOUR(P)", ATest_Hour);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1502:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::DATOB(P)", ATest_DAToB);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1503:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::HATOB(P)", ATest_HAToB);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1504:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::BTODA(P)", ATest_BToDA);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1505:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::BTOHA(P)", ATest_BToHA);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1506:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::For-Next", AT_forNext);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1507:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::For-Next-Break", AT_forNextBreak);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1508:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::For-Next-Break", ATest_Len);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1509:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::For-Next-Break", ATest_Rotation);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1510:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::BtoStr", ATest_BtoStr);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1511:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+Finished building target: PLC_New_Simulator
+ 
+  CU_add_test(pSuite, "Additional Test::StrToB", ATest_StrToB);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1512:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::StrToB", ATest_BToAsc);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1513:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::StrToB", ATest_AscToB);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+../src/PLC_ListOfTestSuite.c:1514:2: warning: passing argument 3 of ‘CU_add_test’ from incompatible pointer type [enabled by default]
+  CU_add_test(pSuite, "Additional Test::DATERD(P)", ATest_Daterd);
+  ^
+In file included from /usr/local/include/CUnit/CUnit.h:112:0,
+                 from ../src/PLC_ListOfTestSuite.c:17:
+/usr/local/include/CUnit/TestDB.h:479:10: note: expected ‘CU_TestFunc’ but argument is of type ‘unsigned char (*)()’
+ CU_pTest CU_add_test(CU_pSuite pSuite, const char* strName, CU_TestFunc pTestFunc);
+          ^
+
+**** Build Finished ****

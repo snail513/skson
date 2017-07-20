@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move &apos;LogFile.log&apos; to &apos;PLC_New_Simulator&apos;" description="Move &apos;LogFile.log&apos; to &apos;PLC_New_Simulator&apos;" destination="/PLC_New_Simulator" element1="PLC_NEW_Simulator/LogFile.log" element2="PLC_NEW_Simulator/readme.txt" flags="7" id="org.eclipse.ltk.core.refactoring.move.resources" resources="2" stamp="1453439011512" updateReferences="true"/>
+</session>

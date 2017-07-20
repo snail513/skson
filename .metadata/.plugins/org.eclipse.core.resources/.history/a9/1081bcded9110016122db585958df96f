@@ -1,0 +1,61 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+typedef enum
+{
+	none = 0,
+	srcbit,
+	srcWord,
+	srcDWord,
+	srcFloat,
+	srcDouble,
+	dstbit,
+	dstWord,
+	dstDWord,
+	dstFloat,
+	dstDouble,
+	cnt
+}TestType;
+
+static void* examples[50];
+static char* exampleString[] = {"1029", "-1009", "1234567890", "-1234556789"};
+static char* exampleHString[] = {"1A29", "-ABC9", "F23456789A", "AABB113340"};
+static uint16 exampleShort = {0x0000, 0x2345, 0x3456, 0xFFFF};
+static uint16 exampleBShort = {0x1AB4, 0xFFFF, 0x3456, 0x8567};
+static uint32 exampleInt = 0xF1234567;
+static uint16 exampleShortBlock = {0x0123, 0xF234, 0x2345, 0x3456};
+static uint16 exampleIntBlock = {0x0123, 0x1234, 0x2345, 0x3456};
+typedef struct
+{
+	PLC_Operator* operator;
+	TestType operands[5];
+}OperandStruct;
+
+static OperandStruct currStruct;
+
+uint8 setOperandStruct(uint16 operatorML, TestType t[])
+{
+	currStruct.operator = PLC_OPERATOR_DICTIONARY_findOperator(operatorML);
+	memcpy(currStruct.operands, t, sizeof*(TestType)*currStruct.operator->nOperandPosCount);
+	return TRUE;
+}
+
+
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+
+

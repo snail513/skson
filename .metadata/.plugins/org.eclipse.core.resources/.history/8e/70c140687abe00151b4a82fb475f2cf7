@@ -1,0 +1,63 @@
+test_no[25]: BMOV runtime error! 
+test_no[25]: BMOV runtime error! 
+test_no[25]: BMOV runtime error! 
+test_no[27]: BMOV runtime error! 
+test_no[27]: BMOV runtime error! 
+test_no[27]: BMOV runtime error! 
+test_no[29]: BMOV runtime error! 
+test_no[29]: BMOV runtime error! 
+test_no[29]: BMOV runtime error! 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+0] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+256] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+1024] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+-255] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+0] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+256] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+1024] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+-255] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+0] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+256] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+1024] : (0:52), (0:120), (0:0), (0:63), 
+test case 31 error cmd=BMOV D[6144] N_X[0] D[160+-256] : (0:52), (0:120), (0:0), (0:63), 
+test case 33 error cmd=BMOV N_X[0] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 33 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 33 error cmd=BMOV N_X[8160] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 35 error cmd=BMOV N_X[0] D[0] N_D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 35 error cmd=BMOV N_X[4096] D[0] N_D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 35 error cmd=BMOV N_X[8160] D[0] N_D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 37 error cmd=BMOV N_X[0] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 37 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 37 error cmd=BMOV N_X[8160] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test case 39 error cmd=BMOV N_X[4096] D[0] D[160] : (0:30772), (0:16128), (0:0), (0:0), 
+test_no[41]: BMOV runtime error! 
+test_no[41]: BMOV runtime error! 
+test_no[41]: BMOV runtime error! 
+test_no[43]: BMOV runtime error! 
+test_no[43]: BMOV runtime error! 
+test_no[43]: BMOV runtime error! 
+test_no[45]: BMOV runtime error! 
+test_no[45]: BMOV runtime error! 
+test_no[45]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 
+test_no[47]: BMOV runtime error! 

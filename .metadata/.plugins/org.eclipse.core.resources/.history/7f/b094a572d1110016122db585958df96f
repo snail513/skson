@@ -1,0 +1,28 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+uint8 opndDest[3];
+
+
+uint8 setDestinationOperand(uint8 ml, uint16 addr)
+{
+	opndDest[0] = ml;
+	memcpy(&opndDest[1], &addr, sizeof(uint16));
+}
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

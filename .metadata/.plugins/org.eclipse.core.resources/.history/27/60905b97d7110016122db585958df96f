@@ -1,0 +1,36 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+typedef enum
+{
+	srcbit = 0,
+	srcWord,
+	srcDWord,
+	srcArr,
+	srcStr
+	dst,
+	dstArr,
+	cnt
+}operandType;
+
+typedef struct operandType
+{
+	 operands[5];
+};
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

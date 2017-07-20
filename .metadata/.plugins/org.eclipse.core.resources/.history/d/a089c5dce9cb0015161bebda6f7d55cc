@@ -1,0 +1,10 @@
+/*
+ * PLC_ModuleRegister.c
+ *
+ *  Created on: 2016. 2. 5.
+ *      Author: skson
+ */
+
+#ifndef PLC_MODULEREGISTER_H_
+#include "PLC_ModuleRegister.h"
+#endif

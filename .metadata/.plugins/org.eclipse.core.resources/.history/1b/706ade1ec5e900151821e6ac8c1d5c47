@@ -1,0 +1,32 @@
+/*
+ * PLC_MasterController.c
+ *
+ *  Created on: 2016. 3. 11.
+ *      Author: skson
+ */
+
+#ifndef PLC_MASTERCONTROLLER_H_
+#include "PLC_MasterController.h"
+
+static MC_Table table;
+
+uint8 PLC_MasterController_setFlag(uint8 mcFlag, uint8 operand[])
+{
+	if(table.arrMCTable[mcFlag].bIsload)
+		return FALSE;
+	table.arrMCTable[mcFlag].bIsload = TRUE;
+	memcpy(table.arrMCTable[mcFlag].operand, operand, 3);
+	//table.arrMCTable[mcFlag].nDevAddr = devAddr;
+	return TRUE;
+}
+uint8 PLC_MasterController_getAndRemoveFlag(uint8* opeand, uint8 mcFlag)
+{
+	if(!table.arrMCTable[mcFlag].bIsload)
+		return FALSE;
+	table.arrMCTable[mcFlag].bIsload = FALSE;
+	*devType = table.arrMCTable[mcFlag].nDevType;
+	*devAddr = table.arrMCTable[mcFlag].nDevAddr;
+	return TRUE;
+}
+
+#endif

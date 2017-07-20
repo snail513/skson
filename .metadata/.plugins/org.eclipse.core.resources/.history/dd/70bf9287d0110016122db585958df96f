@@ -1,0 +1,31 @@
+/*
+ * AddTest.c
+ *
+ *  Created on: 2016. 5. 4.
+ *      Author: skson
+ */
+
+
+#ifndef ADDTEST_H_
+#include "AddTest.h"
+
+static uint8 N = 4;
+static uint16 constantWORD = 4;
+static uint32 constantDWORD = 0x10000000;
+static char* constantString = "1000";
+static uint16 source16_1 = 0x0020;
+static uint16 source16_2 = 0x0030;
+static uint16 source16Block[] = {0x0010, 0x0020, 0x0030, 0x0040};
+static uint32 source32_1 = 0x00200000;
+static uint32 source32_2 = 0x00300000;
+static uint32 source32Block[] = {0x00100000, 0x00200000, 0x00300000, 0x00400000};
+
+
+
+uint8 test_main(int argc, char* argv[])
+{
+
+}
+#endif
+
+

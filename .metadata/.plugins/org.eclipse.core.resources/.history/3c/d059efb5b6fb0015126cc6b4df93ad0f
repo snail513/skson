@@ -1,0 +1,156 @@
+/*
+ * PLC_PreExecFunctions.h
+ *
+ *  Created on: 2014. 11. 5.
+ *      Author: skson
+ */
+
+#ifndef PLC_PREEXECFUNCTIONS_H_
+#define PLC_PREEXECFUNCTIONS_H_
+#include "PLC_Device.h"
+#include "PLC_Operator.h"
+
+#define FUNCTION_TYPE_LD 0
+#define FUNCTION_TYPE_AND 1
+#define FUNCTION_TYPE_OR 2
+#define FUNCTION_OUTTYPE_NORMAL 0
+#define FUNCTION_OUTTYPE_INVERT 1
+#define FUNCTION_PULSETYPE_NORMAL 0
+#define FUNCTION_PULSETYPE_RAISING 1
+#define FUNCTION_PULSETYPE_FALLING 2
+//preProcess
+
+uint32 preProcess_load(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx);
+uint32 preProcess_loadPast(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx);
+uint32 getCurrBitValue(uint32 pos);
+uint32 preProcess_pick(uint32 pos);
+uint32 preProcess_pull(uint32 pos);
+uint32 preProcess_loadPulse();
+uint32 preProcess_loadDelta();
+uint32 preProcess_loadFront(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 offset);
+uint32 preProcess_checkMC();
+uint32 preProcess_loadWord(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx);
+uint8 preProcess_loadLastCMDValue(uint32 pos);
+uint8 preProcess_saveLastCMDValue(uint32 pos);
+int inProcess_getIndexPosition(uint8* opndType, uint8 inst[], uint32* pos, uint8 opdIdx);
+uint32 preProcess_loadDoubleWord(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx);
+float preProcess_loadFloat(uint8 inst[], uint32* pos, PLC_Operator* opt, uint8 opdIdx);//TODO
+double preProcess_loadDouble(uint8 inst[], uint32* pos, PLC_Operator* opt, uint8 opdIdx);//TODO
+uint8* preProcess_loadString(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 opdIdx);
+
+uint32 preProcess_compareString(uint8 inst[], uint32 *pos, PLC_Operator* opt);
+uint32 preProcess_compareWordBlock(uint8 inst[], uint32 *pos, PLC_Operator* opt, uint32 (*comparingFunction)(void*, void*), int isPulseOn);
+uint32 preProcess_compareDoubleWordBlock(uint8 inst[], uint32 *pos, PLC_Operator* opt, uint32 (*comparingFunction)(void*, void*), int isPulseOn);
+uint32 preProcess_calculate(uint8 inst[], uint32 *pos, PLC_Operator* opt,
+		void* calculatingFunction,
+		//uint8 (*calculatingFunction)(uint8*, uint8*, uint8*, uint8),
+		int isPulseOn, int hasNewDst, uint8 byteSize);
+
+uint32 preProcess_calculateFloat(uint8 inst[], uint32 *pos, PLC_Operator* opt, uint8 (*calculatingFunction)(uint8*, uint8*, uint8*, uint8), int isPulseOn, int hasNewDst, uint8 byteSize);
+uint32 preProcess_calculateFloatBlock(uint8 inst[], uint32 *pos, PLC_Operator* opt, uint32 (*calculatingFunction)(double, double), int isPulseOn, int hasNewDst);
+//uint32 preProcess_calculateBCDBlock(uint8 inst[], uint32 *pos, PLC_Operator* opt, long long (*calculatingFunction)(uint32, uint32), int isPulseOn, int hasNewDst, uint8 byteSize);
+//inProcess
+uint8 inProcess_getOperandType(uint8 inst[], uint32* pos, int index);
+uint8* inProcess_getOperandValue(uint8 inst[], uint32* pos, int index);
+
+uint8 inProcess_logicSequence(uint8 inst[], uint32* pos, PLC_Operator* opt, uint8 logicFlag, uint8 pulseFlag, uint8 invertFlag);
+uint32 inProcess_inv(uint32 in);
+uint32 inProcess_detectRaisingEdge(uint32 current, uint32 past);
+uint32 inProcess_detectFallingEdge(uint32 current, uint32 past);
+uint32 inProcess_and(uint32 in, uint32 pos);
+uint32 inProcess_or(uint32 in, uint32 pos);
+uint32 inProcess_savePulse(uint32 in);
+uint32 inProcess_saveDelta(uint32 in);
+uint32 inProcess_pushMC(uint32 in);
+uint32 inProcess_pullMC();
+uint32 inProcess_swapByte(uint16* value);
+uint8 inProcess_isPulse(uint8 value);
+uint8 inProcess_calculateBK(uint8 inst[], uint32 pos, void* calculatingFunction);
+
+uint32 inProcess_compareValue(uint8 inst[], uint32* pos, PLC_Operator* opt,
+		uint32(*compareFunction)(void* inFirst, void* inSecond),
+		uint8 byteSize, uint8 functionType);
+
+uint32 inProcess_compareFloatValue(uint8 inst[], uint32* pos, PLC_Operator* opt,
+		uint32(*compareFunction)(double inFirst, double inSecond),
+		uint8 byteSize, uint8 functionType);
+
+uint8 inProcess_addInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_subInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_mltInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_divInt(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+
+uint8 inProcess_addBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_subBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_mltBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_divBCD(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+
+uint8 inProcess_addFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_subFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_mltFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+uint8 inProcess_divFloat(uint8* tar, uint8* src1, uint8* src2, uint8 byteSize);
+
+void  inprocess_convertBinToFloat(void* dstFloat, void* srcBin, uint8 byteSize);
+void  inprocess_convertFloatToBin(void* dstBin, void* srcFloat, uint8 byteSize);
+void  inprocess_convertBinToDouble(void* dstFloat, void* srcBin, uint8 byteSize);
+void  inprocess_convertDoubleToBin(void* dstBin, void* srcFloat, uint8 byteSize);
+uint8  inprocess_convertBinToBCD(void* dstBCD, void* srcBin, uint8 byteSize);
+uint8  inprocess_convertBCDToBin(void* dstBin, void* srcBCD, uint8 byteSize);
+
+
+uint32 binaryToGray(uint32 num);
+uint32 grayToBinary(uint32 num);
+
+void  inprocess_convertGrayToBin(void* dstBin, void* srcGray, uint8 byteSize);
+void  inprocess_convertBinToGray(void* dstGray, void* srcBin, uint8 byteSize);
+
+uint8 inProcess_addString(uint8* target, uint8* source1, uint8* source2);
+uint8* inProcess_getIndexedOperand(uint8 inst[], uint32 pos, uint8 opndIdx);
+uint8* inProcess_getNextOperand(uint8 inst[], uint32 *pos);
+uint8* inProcess_getCurrOperand(uint8 inst[], uint32* pos);
+void inProcess_rewindPulseDeltaStack();
+
+uint32 inProcess_isEqual(void* inFirst, void* inSecond);
+uint32 inProcess_isNotEqual(void* inFirst, void* inSecond);
+uint32 inProcess_isGreaterThan(void* inFirst, void* inSecond);
+uint32 inProcess_isLesserThan(void* inFirst, void* inSecond);
+uint32 inProcess_isGreaterOrEqual(void* inFirst, void* inSecond);
+uint32 inProcess_isLesserOrEqual(void* inFirst, void* inSecond);
+
+uint32 inProcess_isDWordEqual(void* inFirst, void* inSecond);
+uint32 inProcess_isDWordNotEqual(void* inFirst, void* inSecond);
+uint32 inProcess_isDWordGreaterThan(void* inFirst, void* inSecond);
+uint32 inProcess_isDWordLesserThan(void* inFirst, void* inSecond);
+uint32 inProcess_isDWordGreaterOrEqual(void* inFirst, void* inSecond);
+uint32 inProcess_isDWordLesserOrEqual(void* inFirst, void* inSecond);
+
+uint32 inProcess_isDoubleEqual(double inFirst, double inSecond);
+uint32 inProcess_isDoubleNotEqual(double inFirst, double inSecond);
+uint32 inProcess_isDoubleGreaterThan(double inFirst, double inSecond);
+uint32 inProcess_isDoubleLesserThan(double inFirst, double inSecond);
+uint32 inProcess_isDoubleGreaterOrEqual(double inFirst, double inSecond);
+uint32 inProcess_isDoubleLesserOrEqual(double inFirst, double inSecond);
+
+uint8 inProcess_transperBlock(uint8 inst[], uint32 pos, uint8 wordSize, uint8 F_OR_B);
+
+uint32 inProcess_outTC(uint8 isTimer, uint16 addr, uint16 setValue, uint8 timerMode, uint8 isPulse, uint32* pos);
+
+
+
+void inProcess_outC(uint16 trigger, uint16 countIdx, uint16 setValue);
+void inProcess_outT(uint16 trigger, uint16 timerIdx, long long setValue, uint8 setMode);
+//postProcess
+
+uint32 postProcess_changeCurrentBranchValue(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal);//update current branch value
+uint32 postProcess_pushNewBranchedValue(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal);//input new branch value
+uint32 postProcess_out(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal);
+
+uint32 postProcess_outBySize(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal, uint8 size);
+
+#define postProcess_nop finalProcess_progressPosition
+
+uint32 finalProcess_progressPosition(uint8 inst[],uint32* pos, int operandCount);
+uint32 inProcess_saveToDev(uint8 inst[], uint32* pos, PLC_Operator* opt, uint32 rstVal, uint8 opndIdx, uint8 size);
+uint8 inProcess_from(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 unitByteSize);
+uint8 inProcess_to(uint8 inst[], uint32 pos, PLC_Operator* opt, uint8 unitByteSize);
+#endif /* PLC_PREEXECFUNCTIONS_H_ */
